@@ -105,7 +105,7 @@ api.interceptors.response.use(
 
         // 원래 요청 재시도
         originalRequest.headers['Authorization'] = getAccessToken();
-        return api(originalRequest);
+      return api(originalRequest);
       } catch (refreshError) {
         removeTokens();
         window.location.href = '/login';
@@ -240,6 +240,32 @@ export const setNickname = async (googleSub, nickname) => {
     return userData;
   } catch (error) {
     console.error('Set nickname error:', error);
+    throw error;
+  }
+};
+
+// 박스오피스 정보 조회
+export const getDailyBoxOffice = async () => {
+  try {
+    const response = await api.get('/api/daily-box-office');
+    return response.data;
+  } catch (error) {
+    console.error('Get daily box office error:', error);
+    throw error;
+  }
+};
+
+// 영화 상세 정보 조회
+export const getMovieDetails = async (movieKey, title) => {
+  try {
+    if (!movieKey || !title) {
+      throw new Error('movieKey와 title은 필수 파라미터입니다.');
+    }
+
+    const response = await api.get(`/api/movie-details?movieKey=${encodeURIComponent(movieKey)}&title=${encodeURIComponent(title)}`);
+    return response.data;
+  } catch (error) {
+    console.error('Get movie details error:', error);
     throw error;
   }
 };

@@ -3,33 +3,81 @@ import Header from '../components/Header/Header';
 import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
-import api from '../api/api';
 import Geolocation from '../components/Geolocation/Geolocation';
 import { useNavigate } from 'react-router-dom';
+import { getDailyBoxOffice, getMovieDetails } from '../api/api';
 
 const MainPage = () => {
-  const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const sliderRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const navigate = useNavigate();
+  const [boxOfficeMovies, setBoxOfficeMovies] = useState([]);
 
   useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        const response = await api.get('/movies/boxoffice');
-        setMovies(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('영화 데이터를 가져오는데 실패했습니다:', error);
-        setLoading(false);
-      }
-    };
-
-    fetchMovies();
+    fetchBoxOfficeMovies();
   }, []);
+
+  const fetchBoxOfficeMovies = async () => {
+    try {
+      setLoading(true);
+      const boxOfficeData = await getDailyBoxOffice();
+      console.log('박스오피스 데이터:', boxOfficeData); // 디버깅용 로그
+
+      const moviesWithDetails = await Promise.all(
+        boxOfficeData.map(async (movie) => {
+          // movie 객체의 구조 확인
+          console.log('개별 영화 데이터:', movie);
+
+          // 필수 필드 확인
+          const movieKey = movie.movieKey || movie.movieCd; // movieCd가 있는 경우 사용
+          const title = movie.movieNm || movie.title; // title이 있는 경우 사용
+
+          if (!movieKey || !title) {
+            console.error('필수 영화 정보가 없습니다:', movie);
+            return null;
+          }
+
+          try {
+            console.log('영화 상세 정보 요청:', { movieKey, title }); // 디버깅용 로그
+            const details = await getMovieDetails(movieKey, title);
+            console.log('영화 상세 정보 응답:', details); // 디버깅용 로그
+
+            return {
+              ...movie,
+              ...details,
+              movieKey, // 명시적으로 movieKey 추가
+              movieNm: title, // 명시적으로 movieNm 추가
+              posterUrl: details.posters ? details.posters.split('|')[0] : '',
+              stills: details.stlls ? details.stlls.split('|') : [],
+              actors: Array.isArray(details.actors) ? details.actors.slice(0, 5) : [],
+              vods: Array.isArray(details.vods) ? details.vods : 
+                    typeof details.vods === 'string' ? details.vods.split('|') : []
+            };
+          } catch (error) {
+            console.error('영화 상세 정보를 가져오는데 실패했습니다:', {
+              movieKey,
+              title,
+              error
+            });
+            return null;
+          }
+        })
+      );
+      
+      // null 값 필터링
+      const validMovies = moviesWithDetails.filter(movie => movie !== null);
+      setBoxOfficeMovies(validMovies);
+    } catch (err) {
+      setError('영화 정보를 불러오는데 실패했습니다.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -87,9 +135,17 @@ const MainPage = () => {
     navigate('/theater-search');
   };
 
-  const handleDetailClick = (movieId) => {
-    navigate(`/movie/${movieId}`);
+  const handleDetailClick = (movie) => {
+    navigate(`/movie/${movie.movieKey}`, { 
+      state: { 
+        movieData: movie,
+        title: movie.movieNm 
+      } 
+    });
   };
+
+  // 영화 제목에서 #숫자 제거 함수
+  const cleanCardTitle = (title) => (title || '').replace(/#\d+$/, '').trim();
 
   return (
     <div className="main-container">
@@ -118,10 +174,12 @@ const MainPage = () => {
         <section className="section">
           <h2 className="section-title">
             <span className="section-title-emoji">🎬</span>
-            현재 상영중인 영화
+            박스오피스
           </h2>
           {loading ? (
             <div className="loading">로딩중...</div>
+          ) : error ? (
+            <div className="error">{error}</div>
           ) : (
             <div className="movie-slider-container">
               <button className="slider-button prev" onClick={handlePrevClick}>
@@ -138,31 +196,30 @@ const MainPage = () => {
                 onMouseMove={handleMouseMove}
                 style={{ cursor: 'grab' }}
               >
-                {movies.map((movie) => (
-                  <div key={movie.id} className="movie-card">
-                    <div className="movie-poster">
+                {boxOfficeMovies.map((movie) => (
+                  <div key={movie.movieKey} className="movie-card">
+                    <div className="main-movie-poster">
                       <img
                         src={movie.posterUrl}
-                        alt={movie.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
+                        alt={movie.movieNm}
                       />
                       <div className="movie-overlay">
                         <button 
                           className="movie-button detail-button"
-                          onClick={() => handleDetailClick(movie.id)}
+                          onClick={() => handleDetailClick(movie)}
                         >
                           상세정보
                         </button>
                         <button 
                           className="movie-button theater-button"
-                          onClick={() => navigate(`/theater-search?movieId=${movie.id}`)}
+                          onClick={() => navigate(`/theater-search?movieId=${movie.movieKey}`)}
                         >
                           예매하기
                         </button>
                       </div>
                     </div>
                     <h3 className="movie-title">
-                      {movie.title}
+                      {cleanCardTitle(movie.movieNm)}
                     </h3>
                   </div>
                 ))}

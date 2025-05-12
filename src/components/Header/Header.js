@@ -70,10 +70,10 @@ const Header = () => {
         <header className="header">
           <div className="header-content">
             <Link to="/" aria-label="메인으로 이동" tabIndex={0} className="logo-text-link">
-              <div className="logo-container">
-                <span className="logo-emoji">🎬</span>
-                <h1 className="logo-text">CineFinder</h1>
-              </div>
+            <div className="logo-container">
+              <span className="logo-emoji">🎬</span>
+              <h1 className="logo-text">CineFinder</h1>
+            </div>
             </Link>
             <div className="search-container">
               <select className="select-box">
@@ -114,7 +114,7 @@ const Header = () => {
             </div>
           </div>
         </header>
-    );
-};
-
-export default Header; 
+      );
+    };
+    
+    export default Header; 
