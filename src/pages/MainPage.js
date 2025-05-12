@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header/Header';
-import { StyledWrapper } from '../assets/stylejs/MainPage.styles';
-import GithubButton from '../components/Footer/GithubButton';
-import '../assets/css/MainPage.css';
+import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
+import Footer from '../components/Footer/Footer';
+import '../utils/css/MainPage.css';
 import api from '../api/api';
+import Geolocation from '../components/Geolocation/Geolocation';
+import { useNavigate } from 'react-router-dom';
 
 const MainPage = () => {
   const [movies, setMovies] = useState([]);
@@ -12,6 +14,7 @@ const MainPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -80,9 +83,16 @@ const MainPage = () => {
     }
   };
 
+  const handleTheaterSearch = () => {
+    navigate('/theater-search');
+  };
+
+  const handleDetailClick = (movieId) => {
+    navigate(`/movie/${movieId}`);
+  };
+
   return (
     <div className="main-container">
-      <Header />
 
       {/* 메인 인트로 영역 */}
       <section className="welcome-section earth-style">
@@ -96,10 +106,12 @@ const MainPage = () => {
             오늘 근처 영화관에서 볼 수 있는 영화를 찾아보세요.
           </p>
           <StyledWrapper>
-            <button>영화관 찾기</button>
+            <button onClick={handleTheaterSearch}>영화관 찾기</button>
           </StyledWrapper>
         </div>
       </section>
+
+      <Geolocation />
 
       {/* 현재 상영중인 영화 섹션 */}
       <main className="main-content">
@@ -135,11 +147,17 @@ const MainPage = () => {
                         style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
                       />
                       <div className="movie-overlay">
-                        <button className="movie-button detail-button">
+                        <button 
+                          className="movie-button detail-button"
+                          onClick={() => handleDetailClick(movie.id)}
+                        >
                           상세정보
                         </button>
-                        <button className="movie-button theater-button">
-                          영화관 찾기
+                        <button 
+                          className="movie-button theater-button"
+                          onClick={() => navigate(`/theater-search?movieId=${movie.id}`)}
+                        >
+                          예매하기
                         </button>
                       </div>
                     </div>
@@ -159,11 +177,7 @@ const MainPage = () => {
         </section>
       </main>
 
-      <footer className="footer">
-        <div className="footer-content" style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', alignItems: 'center' }}>
-          <GithubButton />
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

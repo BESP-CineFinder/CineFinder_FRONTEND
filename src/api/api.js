@@ -1,21 +1,57 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081';
+
+// 토큰 관리 함수들
+const getAccessToken = () => {
+  const token = localStorage.getItem('accessToken');
+  return token ? `Bearer ${token}` : null;
+};
+
+const getRefreshToken = () => {
+  const token = localStorage.getItem('refreshToken');
+  return token ? `Bearer ${token}` : null;
+};
+
+const setTokens = (accessToken, refreshToken) => {
+  if (accessToken) {
+    // Bearer 접두사가 있다면 제거
+    const cleanToken = accessToken.replace('Bearer ', '');
+    localStorage.setItem('accessToken', cleanToken);
+  }
+  if (refreshToken) {
+    // Bearer 접두사가 있다면 제거
+    const cleanToken = refreshToken.replace('Bearer ', '');
+    localStorage.setItem('refreshToken', cleanToken);
+  }
+};
+
+const removeTokens = () => {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+};
+
+export const isAuthenticated = () => {
+  return !!getAccessToken();
+};
 
 // Axios 인스턴스 생성
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: false,
-  timeout: 120000, // 120초 타임아웃 설정
+  withCredentials: true,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   }
 });
 
-// 요청 인터셉터 설정
+// 요청 인터셉터
 api.interceptors.request.use(
   config => {
-    // 요청 전에 수행할 작업
+    const token = getAccessToken();
+    if (token) {
+      config.headers['Authorization'] = token;
+    }
     return config;
   },
   error => {
@@ -23,35 +59,189 @@ api.interceptors.request.use(
   }
 );
 
-// 응답 인터셉터 설정
+// 응답 인터셉터
 api.interceptors.response.use(
   response => {
-    // 응답에서 Refresh-Token 헤더를 읽어 로컬 스토리지에 저장
-    const refreshToken = response.headers['refresh-token'];
-    if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
+    // 새로운 토큰이 헤더에 있으면 저장
+    const newAccessToken = response.headers['authorization'];
+    const newRefreshToken = response.headers['refresh-token'];
+    
+    if (newAccessToken || newRefreshToken) {
+      setTokens(newAccessToken, newRefreshToken);
     }
+    
     return response;
   },
   async error => {
     const originalRequest = error.config;
     
-    // 타임아웃 에러인 경우 재시도
-    if (error.code === 'ECONNABORTED' && !originalRequest._retry) {
+    // 토큰 만료 에러 처리
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      return api(originalRequest);
+      
+      try {
+        // 토큰 갱신 시도
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+          removeTokens();
+          window.location.href = '/login';
+          return Promise.reject(error);
+        }
+
+        const response = await axios.post(
+          `${API_BASE_URL}/api/auth/refresh`,
+          {},
+          { 
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': refreshToken
+            }
+          }
+        );
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        setTokens(accessToken, newRefreshToken);
+
+        // 원래 요청 재시도
+        originalRequest.headers['Authorization'] = getAccessToken();
+        return api(originalRequest);
+      } catch (refreshError) {
+        removeTokens();
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
     }
 
-    // 네트워크 에러 처리
-    if (!error.response) {
-      console.error('네트워크 에러:', error.message);
-      throw new Error('서버와의 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
+    // 인증이 필요한 경우 로그인 페이지로 리다이렉트
+    if (error.response?.status === 403) {
+      removeTokens();
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
 
-    // 기타 에러 처리
-    console.error('API 에러:', error);
     return Promise.reject(error);
   }
 );
+
+// 구글 로그인
+export const googleLogin = async (credential) => {
+  try {
+    if (!credential) {
+      throw new Error('Google 인증 정보가 없습니다.');
+    }
+
+    const response = await api.post('/api/auth/google', 
+      { credential },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true,
+        validateStatus: function (status) {
+          return status >= 200 && status < 500; // 302 응답도 허용
+        }
+      }
+    );
+    
+    if (!response.data) {
+      throw new Error('서버 응답이 올바르지 않습니다.');
+    }
+
+    const { accessToken, refreshToken, user } = response.data;
+    
+    if (!accessToken || !refreshToken || !user) {
+      throw new Error('로그인 정보가 올바르지 않습니다.');
+    }
+
+    // 응답 헤더에서 토큰 가져오기
+    const headerAccessToken = response.headers['authorization'];
+    const headerRefreshToken = response.headers['refresh-token'];
+    
+    // 헤더의 토큰이 있으면 사용, 없으면 응답 본문의 토큰 사용
+    setTokens(headerAccessToken || accessToken, headerRefreshToken || refreshToken);
+
+    return { user };
+  } catch (error) {
+    console.error('Login error:', error);
+    if (error.response?.status === 302) {
+      // 302 응답은 정상적인 리다이렉트로 처리
+      return error.response;
+    }
+    throw error;
+  }
+};
+
+// 로그아웃
+export const logout = async () => {
+  try {
+    const token = getAccessToken();
+    await api.post('/api/auth/logout', {}, {
+      headers: {
+        'Authorization': token
+      }
+    });
+    removeTokens();
+  } catch (error) {
+    console.error('Logout error:', error);
+    throw error;
+  }
+};
+
+// 현재 사용자 정보 조회
+export const getCurrentUser = async () => {
+  try {
+    const token = getAccessToken();
+    if (!token) {
+      throw new Error('No access token available');
+    }
+    
+    const response = await api.get('/api/me', {
+      headers: {
+        'Authorization': token
+      }
+    });
+
+    // 응답 데이터에 googleSub가 없는 경우 에러 발생
+    if (!response.data || !response.data.googleSub) {
+      throw new Error('사용자 정보가 올바르지 않습니다.');
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Get current user error:', error);
+    throw error;
+  }
+};
+
+// 닉네임 설정
+export const setNickname = async (googleSub, nickname) => {
+  try {
+    const token = getAccessToken();
+    if (!token) {
+      throw new Error('No access token available');
+    }
+    
+    if (!googleSub) {
+      throw new Error('Google Sub is required');
+    }
+
+    const response = await api.post('/api/signup-nickname', 
+      { googleSub, nickname },
+      {
+        headers: {
+          'Authorization': token
+        }
+      }
+    );
+
+    // 닉네임 설정 후 사용자 정보 업데이트
+    const userData = await getCurrentUser();
+    return userData;
+  } catch (error) {
+    console.error('Set nickname error:', error);
+    throw error;
+  }
+};
 
 export default api;

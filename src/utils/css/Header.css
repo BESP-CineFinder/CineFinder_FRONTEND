@@ -16,6 +16,7 @@
 .logo-container {
   display: flex;
   align-items: center;
+  text-decoration: none;
 }
 
 .logo-emoji {
@@ -26,6 +27,11 @@
 .logo-text {
   font-size: 1.25rem;
   font-weight: bold;
+}
+
+.logo-text-link {
+  text-decoration: none;
+  color: inherit;
 }
 
 .search-container {
