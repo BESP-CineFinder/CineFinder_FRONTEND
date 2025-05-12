@@ -1,0 +1,186 @@
+.theater-search-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theater-search-container h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.location-section,
+.time-section {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.location-section h2,
+.time-section h2 {
+  color: #495057;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.select-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.select-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: #495057;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.select-input:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.date-time-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.date-time-input {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.date-time-input label {
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.time-input-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.time-input-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.time-input-section label {
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.date-input,
+.time-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: #495057;
+  background-color: #fff;
+}
+
+.time-input-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.time-input-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #495057;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.time-input-toggle input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.search-button {
+  padding: 1rem 2rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.search-button:hover {
+  background-color: #0056b3;
+}
+
+.search-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* DatePicker 커스텀 스타일 */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.react-datepicker__header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ced4da;
+}
+
+.react-datepicker__day--selected {
+  background-color: #007bff !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: #e9ecef !important;
+}
+
+@media (max-width: 768px) {
+  .theater-search-container {
+    margin: 1rem;
+    padding: 1rem;
+  }
+
+  .select-group,
+  .date-time-group,
+  .time-input-group {
+    flex-direction: column;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+} 

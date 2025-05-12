@@ -1,0 +1,194 @@
+.tsr-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.tsr-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.tsr-movie-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.tsr-movie-card {
+  display: flex;
+  gap: 2rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tsr-movie-poster {
+  position: relative;
+  width: 200px;
+  margin-right: 20px;
+}
+
+.tsr-movie-poster img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.tsr-movie-poster .tsr-movie-title {
+  margin-top: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+}
+
+.tsr-movie-info {
+  flex-grow: 1;
+}
+
+.tsr-movie-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.tsr-theater-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tsr-theater-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: #fafbfc;
+}
+
+.tsr-theater-header {
+  margin-bottom: 0.5rem;
+}
+
+.tsr-theater-chain {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.tsr-theater-chain-cgv {
+  background: linear-gradient(90deg, #e31837 60%, #b71c1c 100%);
+  color: #fff;
+}
+
+.tsr-theater-chain-megabox {
+  background: linear-gradient(90deg, #4a1e8f 60%, #6c2eb7 100%);
+  color: #fff;
+}
+
+.tsr-theater-chain-lotte {
+  background: linear-gradient(90deg, #ed1c24 60%, #ff6f61 100%);
+  color: #fff;
+}
+
+.tsr-screening-list-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tsr-screening-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 1rem;
+}
+.tsr-screening-row:last-child {
+  border-bottom: none;
+}
+
+.tsr-screening-time {
+  font-weight: bold;
+  color: #333;
+  min-width: 60px;
+}
+
+.tsr-screening-info {
+  color: #666;
+  min-width: 110px;
+}
+
+.tsr-theater-name {
+  color: #222;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.tsr-loading {
+  font-size: 1.25rem;
+  color: #666;
+}
+
+.tsr-error {
+  font-size: 1.25rem;
+  color: #dc2626;
+}
+
+.tsr-no-results {
+  text-align: center;
+  font-size: 1.25rem;
+  color: #666;
+  padding: 2rem;
+}
+
+.tsr-screening-list-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.tsr-screening-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 120px;
+  max-width: 150px;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  font-size: 1rem;
+  transition: box-shadow 0.2s;
+}
+.tsr-screening-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  border-color: #bdbdbd;
+}
+
+.tsr-screening-time {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.tsr-screening-info {
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.tsr-theater-name {
+  color: #222;
+  font-weight: 500;
+  font-size: 0.98rem;
+} 

@@ -1,0 +1,156 @@
+.movie-detail-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.movie-detail-backdrop {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.movie-detail-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%);
+  padding: 2rem;
+}
+
+.movie-detail-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 2rem;
+  padding-top: 2rem;
+}
+
+.movie-detail-poster {
+  flex-shrink: 0;
+  width: 300px;
+}
+
+.movie-detail-poster img {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.movie-detail-info {
+  flex-grow: 1;
+  color: white;
+}
+
+.movie-detail-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.movie-detail-original-title {
+  font-size: 1.2rem;
+  color: #ccc;
+  margin-bottom: 1.5rem;
+}
+
+.movie-detail-meta {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.movie-detail-rating {
+  color: #ffd700;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.movie-detail-year,
+.movie-detail-runtime {
+  color: #ccc;
+  display: flex;
+  align-items: center;
+}
+
+.movie-detail-genres {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.movie-detail-genre {
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(255,255,255,0.1);
+  border-radius: 1rem;
+  font-size: 0.9rem;
+}
+
+.movie-detail-section {
+  margin-bottom: 1.5rem;
+}
+
+.movie-detail-section h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #ccc;
+}
+
+.movie-detail-section p {
+  line-height: 1.6;
+}
+
+.movie-detail-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.movie-detail-button {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.movie-detail-button:first-child {
+  background-color: #e50914;
+  color: white;
+}
+
+.movie-detail-button:first-child:hover {
+  background-color: #f40612;
+}
+
+.movie-detail-button.secondary {
+  background-color: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.movie-detail-button.secondary:hover {
+  background-color: rgba(255,255,255,0.2);
+}
+
+.movie-detail-loading,
+.movie-detail-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.25rem;
+  color: #666;
+}
+
+.movie-detail-error {
+  color: #dc2626;
+} 
