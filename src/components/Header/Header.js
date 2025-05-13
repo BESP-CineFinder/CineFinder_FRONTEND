@@ -24,8 +24,8 @@ const Header = () => {
         }
     };
 
-    const handleLoginClick = () => {
-        navigate('/login');
+    const handleKakaoLogin = () => {
+        window.location.href = 'https://localhost/api/login/';
     };
 
     if (loading) {
@@ -72,14 +72,29 @@ const Header = () => {
                   </button>
                 </>
               ) : (
-                <button onClick={handleLoginClick} className="login-button">
-                  로그인
+                <button 
+                  onClick={handleKakaoLogin} 
+                  className="login-button"
+                  style={{
+                    background: '#FEE500',
+                    color: '#181600',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.5rem 1.5rem',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                  }}
+                >
+                  카카오로 로그인
                 </button>
               )}
             </div>
           </div>
         </header>
-      );
-    };
-    
-    export default Header; 
+    );
+};
+
+export default Header; 

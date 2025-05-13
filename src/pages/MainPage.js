@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Header from '../components/Header/Header';
 import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
@@ -32,11 +31,9 @@ const MainPage = () => {
       }
 
       const boxOfficeData = response.payload;
-      console.log('박스오피스 데이터:', boxOfficeData);
 
       const moviesWithDetails = await Promise.all(
         boxOfficeData.map(async (movie) => {
-          console.log('개별 영화 데이터:', movie);
 
           const movieKey = movie.movieKey;
           const title = movie.movieNm;
@@ -47,9 +44,7 @@ const MainPage = () => {
           }
 
           try {
-            console.log('영화 상세 정보 요청:', { movieKey, title });
             const details = await getMovieDetails(movieKey, title);
-            console.log('영화 상세 정보 응답:', details);
 
             return {
               ...movie,

@@ -26,7 +26,6 @@ const MovieDetailPage = () => {
     return <div className="error">영화 정보를 찾을 수 없습니다.</div>;
   }
 
-  // 예고편 슬라이더 핸들러
   const handlePrevVod = () => {
     setCurrentVodIndex((prev) => (prev === 0 ? movie.vods.length - 1 : prev - 1));
   };
@@ -34,8 +33,6 @@ const MovieDetailPage = () => {
     setCurrentVodIndex((prev) => (prev === movie.vods.length - 1 ? 0 : prev + 1));
   };
 
-  // 디버깅: 예고편 정보 출력
-  console.log('vods:', movie.vods, 'currentVodIndex:', currentVodIndex);
   
   // 유효한 예고편이 있는지 확인
   const hasValidVods = Array.isArray(movie.vods) && movie.vods.length > 0 && movie.vods[0];
@@ -44,7 +41,7 @@ const MovieDetailPage = () => {
     <div className="movie-detail-page">
       <div className="movie-backdrop" style={{ backgroundImage: `url(${movie.posterUrl})` }}>
         <div className="backdrop-overlay">
-          <div className="movie-info fixed-position">
+          <div className="movie-info">
             <div className="movie-poster">
               <img src={movie.posterUrl} alt={cleanTitle(movie.movieNm)} />
             </div>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getMovieDetails } from '../api/api';
+import { normalizeMovieKey } from '../utils/stringUtils';
 import '../utils/css/TheaterSearchResultPage.css';
 
 // 체인별로 상영 정보를 묶는 함수
@@ -127,6 +129,41 @@ const TheaterSearchResultPage = () => {
     console.log('Selected theater:', theater, 'Screening:', screening);
   };
 
+  const handlePosterClick = async (movie) => {
+    try {
+      const movieKey = normalizeMovieKey(movie.movieTitle);
+      const details = await getMovieDetails(movieKey, movie.movieTitle);
+      
+      const movieData = {
+        ...movie,
+        ...details,
+        movieKey,
+        movieNm: movie.movieTitle,
+        posterUrl: details.posters ? details.posters.split('|')[0] : movie.posterUrl,
+        stills: details.stlls ? details.stlls.split('|') : [],
+        actors: Array.isArray(details.actors) ? details.actors.slice(0, 5) : [],
+        vods: Array.isArray(details.vods) ? details.vods : 
+              typeof details.vods === 'string' ? details.vods.split('|') : []
+      };
+
+      navigate(`/movie/${movieKey}`, {
+        state: {
+          movieData,
+          title: movie.movieTitle
+        }
+      });
+    } catch (error) {
+      console.error('영화 상세 정보를 가져오는데 실패했습니다:', error);
+      // 에러가 발생해도 기본 정보로 상세 페이지로 이동
+      navigate(`/movie/${normalizeMovieKey(movie.movieTitle)}`, {
+        state: {
+          movieData: movie,
+          title: movie.movieTitle
+        }
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="theater-search-result-container">
@@ -168,7 +205,7 @@ const TheaterSearchResultPage = () => {
                   <div key={movie.id} className="tsr-movie-card">
                     <div 
                       className="tsr-movie-poster"
-                      onClick={() => navigate(`/movie/${movie.id}`)}
+                      onClick={() => handlePosterClick(movie)}
                       style={{ cursor: 'pointer' }}
                     >
                       <img src={movie.posterUrl} alt={movie.movieTitle} />
