@@ -13,7 +13,7 @@ const getRefreshToken = () => {
   return token ? `Bearer ${token}` : null;
 };
 
-const setTokens = (accessToken, refreshToken) => {
+export const setTokens = (accessToken, refreshToken) => {
   if (accessToken) {
     // Bearer 접두사가 있다면 제거
     const cleanToken = accessToken.replace('Bearer ', '');
@@ -124,64 +124,34 @@ api.interceptors.response.use(
   }
 );
 
-// 구글 로그인
-export const googleLogin = async (credential) => {
-  try {
-    if (!credential) {
-      throw new Error('Google 인증 정보가 없습니다.');
-    }
-
-    const response = await api.post('/api/auth/google', 
-      { credential },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true,
-        validateStatus: function (status) {
-          return status >= 200 && status < 500; // 302 응답도 허용
-        }
-      }
-    );
-    
-    if (!response.data) {
-      throw new Error('서버 응답이 올바르지 않습니다.');
-    }
-
-    const { accessToken, refreshToken, user } = response.data;
-    
-    if (!accessToken || !refreshToken || !user) {
-      throw new Error('로그인 정보가 올바르지 않습니다.');
-    }
-
-    // 응답 헤더에서 토큰 가져오기
-    const headerAccessToken = response.headers['authorization'];
-    const headerRefreshToken = response.headers['refresh-token'];
-    
-    // 헤더의 토큰이 있으면 사용, 없으면 응답 본문의 토큰 사용
-    setTokens(headerAccessToken || accessToken, headerRefreshToken || refreshToken);
-
-    return { user };
-  } catch (error) {
-    console.error('Login error:', error);
-    if (error.response?.status === 302) {
-      // 302 응답은 정상적인 리다이렉트로 처리
-      return error.response;
-    }
-    throw error;
-  }
+export const removeCookie = (name) => {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 };
 
-// 로그아웃
 export const logout = async () => {
   try {
-    const token = getAccessToken();
-    await api.post('/api/auth/logout', {}, {
+    const accessToken = getAccessToken();
+    const response = await fetch('/api/logout', {
+      method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': token
-      }
+        'Content-Type': 'application/json',
+        'Authorization': accessToken
+      },
     });
+
+    if (!response.ok) {
+      throw new Error('로그아웃 실패');
+    }
+
+    // 쿠키 제거
+    removeCookie('Refresh-Token');
+    removeCookie('JSESSIONID');
+    
+    // localStorage에서 토큰 제거
     removeTokens();
+    
+    return response;
   } catch (error) {
     console.error('Logout error:', error);
     throw error;

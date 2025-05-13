@@ -1,57 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { logout, getCurrentUser, isAuthenticated } from '../../api/api';
+import { logout } from '../../api/api';
+import { AuthContext } from '../../utils/auth/contexts/AuthProvider';
 import '../../utils/css/Header.css';
 
 const Header = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [user, setUser] = useState(null);
+    const { user, setUser } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
     const [loading, setLoading] = useState(true);
 
-    const fetchUserData = async () => {
-        try {
-            if (!isAuthenticated()) {
-                setUser(null);
-                setIsLoggedIn(false);
-                setLoading(false);
-                return;
-            }
-
-            const userData = await getCurrentUser();
-            console.log('Header - Current user data:', userData);
-            
-            if (!userData) {
-                throw new Error('사용자 정보를 가져오는데 실패했습니다.');
-            }
-
-            setUser(userData);
-            setIsLoggedIn(true);
-        } catch (error) {
-            console.error('Header - Auth check error:', error);
-            setUser(null);
-            setIsLoggedIn(false);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchUserData();
-    }, []);
-
-    useEffect(() => {
-        if (location.pathname === '/' && isAuthenticated()) {
-            fetchUserData();
-        }
-    }, [location.pathname]);
+        setLoading(false);
+    }, [user]);
 
     const handleLogout = async () => {
         try {
             await logout();
             setUser(null);
-            setIsLoggedIn(false);
             navigate('/');
         } catch (error) {
             console.error('Header - Logout error:', error);
@@ -92,11 +58,10 @@ const Header = () => {
               </div>
             </div>
             <div className="auth-container">
-              {isLoggedIn ? (
+              {user && user.isAuthenticated ? (
                 <>
                   <Link to="/mypage" className="mypage-link" aria-label="마이페이지로 이동">
-                    <img src={user.picture} alt="프로필" className="profile-img" />
-                    <span>{user.nickname || user.name} 님</span>
+                    <span>{user.payload.nickname} 님</span>
                   </Link>
                   <button 
                     className="logout-btn" 
