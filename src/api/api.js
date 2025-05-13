@@ -1,6 +1,7 @@
 import axios from 'axios';
+import cookie from 'react-cookies';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost';
 
 // 토큰 관리 함수들
 const getAccessToken = () => {
@@ -75,63 +76,66 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
     
-    // 토큰 만료 에러 처리
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      try {
-        // 토큰 갱신 시도
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) {
-          removeTokens();
-          window.location.href = '/login';
-          return Promise.reject(error);
-        }
+    // 인증이 필요한 API에 대해서만 토큰 체크
+    const requiresAuth = originalRequest.url.includes('/api/chat/') || 
+                        originalRequest.url.includes('/api/info/') ||
+                        originalRequest.url.includes('/api/signup/nickname');
 
-        const response = await axios.post(
-          `${API_BASE_URL}/api/auth/refresh`,
-          {},
-          { 
-            withCredentials: true,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': refreshToken
-            }
+    if (requiresAuth) {
+      // 토큰 만료 에러 처리
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        
+        try {
+          // 토큰 갱신 시도
+          const refreshToken = getRefreshToken();
+          if (!refreshToken) {
+            removeTokens();
+            window.location.href = '/api/login/';
+            return Promise.reject(error);
           }
-        );
 
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
-        setTokens(accessToken, newRefreshToken);
+          const response = await axios.post(
+            `${API_BASE_URL}/api/auth/refresh`,
+            {},
+            { 
+              withCredentials: true,
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': refreshToken
+              }
+            }
+          );
 
-        // 원래 요청 재시도
-        originalRequest.headers['Authorization'] = getAccessToken();
-      return api(originalRequest);
-      } catch (refreshError) {
-        removeTokens();
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
+          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          setTokens(accessToken, newRefreshToken);
+
+          // 원래 요청 재시도
+          originalRequest.headers['Authorization'] = getAccessToken();
+          return api(originalRequest);
+        } catch (refreshError) {
+          removeTokens();
+          window.location.href = '/api/login/';
+          return Promise.reject(refreshError);
+        }
       }
-    }
 
-    // 인증이 필요한 경우 로그인 페이지로 리다이렉트
-    if (error.response?.status === 403) {
-      removeTokens();
-      window.location.href = '/login';
-      return Promise.reject(error);
+      // 인증이 필요한 경우 로그인 페이지로 리다이렉트
+      if (error.response?.status === 403) {
+        removeTokens();
+        window.location.href = '/api/login/';
+        return Promise.reject(error);
+      }
     }
 
     return Promise.reject(error);
   }
 );
 
-export const removeCookie = (name) => {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-};
-
 export const logout = async () => {
   try {
     const accessToken = getAccessToken();
-    const response = await fetch('/api/logout', {
+    const response = await fetch(`${API_BASE_URL}/api/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -144,10 +148,6 @@ export const logout = async () => {
       throw new Error('로그아웃 실패');
     }
 
-    // 쿠키 제거
-    removeCookie('Refresh-Token');
-    removeCookie('JSESSIONID');
-    
     // localStorage에서 토큰 제거
     removeTokens();
     
@@ -217,7 +217,7 @@ export const setNickname = async (googleSub, nickname) => {
 // 박스오피스 정보 조회
 export const getDailyBoxOffice = async () => {
   try {
-    const response = await api.get('/api/daily-box-office');
+    const response = await api.get('/api/movie/daily-box-office');
     return response.data;
   } catch (error) {
     console.error('Get daily box office error:', error);
@@ -232,8 +232,14 @@ export const getMovieDetails = async (movieKey, title) => {
       throw new Error('movieKey와 title은 필수 파라미터입니다.');
     }
 
-    const response = await api.get(`/api/movie-details?movieKey=${encodeURIComponent(movieKey)}&title=${encodeURIComponent(title)}`);
-    return response.data;
+    const response = await api.get(`/api/movie/movie-details?movieKey=${encodeURIComponent(movieKey)}&title=${encodeURIComponent(title)}`);
+    
+    // 응답 구조 확인 및 데이터 추출
+    if (response.data && response.data.payload) {
+      return response.data.payload;
+    }
+    
+    throw new Error('영화 상세 정보를 찾을 수 없습니다.');
   } catch (error) {
     console.error('Get movie details error:', error);
     throw error;

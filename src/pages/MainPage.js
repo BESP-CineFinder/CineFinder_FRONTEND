@@ -24,17 +24,22 @@ const MainPage = () => {
   const fetchBoxOfficeMovies = async () => {
     try {
       setLoading(true);
-      const boxOfficeData = await getDailyBoxOffice();
-      console.log('박스오피스 데이터:', boxOfficeData); // 디버깅용 로그
+      const response = await getDailyBoxOffice();
+      
+      // 응답 구조 확인 및 데이터 추출
+      if (!response.payload || !Array.isArray(response.payload)) {
+        throw new Error('박스오피스 데이터가 올바르지 않습니다.');
+      }
+
+      const boxOfficeData = response.payload;
+      console.log('박스오피스 데이터:', boxOfficeData);
 
       const moviesWithDetails = await Promise.all(
         boxOfficeData.map(async (movie) => {
-          // movie 객체의 구조 확인
           console.log('개별 영화 데이터:', movie);
 
-          // 필수 필드 확인
-          const movieKey = movie.movieKey || movie.movieCd; // movieCd가 있는 경우 사용
-          const title = movie.movieNm || movie.title; // title이 있는 경우 사용
+          const movieKey = movie.movieKey;
+          const title = movie.movieNm;
 
           if (!movieKey || !title) {
             console.error('필수 영화 정보가 없습니다:', movie);
@@ -42,15 +47,15 @@ const MainPage = () => {
           }
 
           try {
-            console.log('영화 상세 정보 요청:', { movieKey, title }); // 디버깅용 로그
+            console.log('영화 상세 정보 요청:', { movieKey, title });
             const details = await getMovieDetails(movieKey, title);
-            console.log('영화 상세 정보 응답:', details); // 디버깅용 로그
+            console.log('영화 상세 정보 응답:', details);
 
             return {
               ...movie,
               ...details,
-              movieKey, // 명시적으로 movieKey 추가
-              movieNm: title, // 명시적으로 movieNm 추가
+              movieKey,
+              movieNm: title,
               posterUrl: details.posters ? details.posters.split('|')[0] : '',
               stills: details.stlls ? details.stlls.split('|') : [],
               actors: Array.isArray(details.actors) ? details.actors.slice(0, 5) : [],
@@ -68,7 +73,6 @@ const MainPage = () => {
         })
       );
       
-      // null 값 필터링
       const validMovies = moviesWithDetails.filter(movie => movie !== null);
       setBoxOfficeMovies(validMovies);
     } catch (err) {
