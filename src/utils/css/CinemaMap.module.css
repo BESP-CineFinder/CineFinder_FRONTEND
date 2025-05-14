@@ -1,0 +1,590 @@
+.cinemaMap-mapContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.cinemaMap-mapContent {
+  display: flex;
+  height: calc(100vh - 100px);
+}
+
+.cinemaMap-mapWrapper {
+  flex: 1;
+  position: relative;
+}
+
+.cinemaMap-map {
+  width: 100%;
+  height: 100%;
+}
+
+.cinemaMap-searchWrapper {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cinemaMap-searchContainer {
+  display: flex;
+  gap: 8px;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cinemaMap-searchInput {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 10px;
+}
+
+.cinemaMap-searchButton {
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.cinemaMap-searchButton:hover {
+  background-color: #1976D2;
+}
+
+.cinemaMap-selectedPlaceInfo {
+  position: absolute;
+  top: 30px;
+  left: 10px;
+  z-index: 1;
+  background: white;
+  padding: 16px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 50px;
+}
+
+.cinemaMap-selectedPlaceInfo h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.cinemaMap-selectedPlaceInfo p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.cinemaMap-nearbyButton {
+  width: 100%;
+  padding: 8px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.cinemaMap-nearbyButton:hover {
+  background-color: #388E3C;
+}
+
+.cinemaMap-customTypeControl {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cinemaMap-btn {
+  padding: 6px 12px;
+  background-color: white;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  font-size: 12px;
+  margin: 0 2px;
+}
+
+.cinemaMap-selectedBtn {
+  padding: 6px 12px;
+  background-color: #2196F3;
+  color: white;
+  border: 1px solid #2196F3;
+  cursor: pointer;
+  font-size: 12px;
+  margin: 0 2px;
+}
+
+.cinemaMap-customZoomControl {
+  position: absolute;
+  bottom: 50px;
+  right: 10px;
+  z-index: 1;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cinemaMap-customZoomControl span {
+  display: block;
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  cursor: pointer;
+  margin: 2px 0;
+}
+
+.cinemaMap-customZoomControl span img {
+  width: 15px;
+  height: 15px;
+  padding: 8px;
+}
+
+.cinemaMap-radiusBorder {
+  border: 1px solid #ddd;
+}
+
+.cinemaMap-markerInfo {
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+  text-align: center;
+}
+
+.cinemaMap-cinemaName {
+  font-weight: bold;
+  margin: 0 0 4px 0;
+  color: #333;
+}
+
+.cinemaMap-distance {
+  margin: 0;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.cinemaMap-placesList {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-height: 800px;
+  overflow-y: auto;
+  width: 300px;
+  padding: 0;
+}
+
+.cinemaMap-placeItem {
+  position: relative;
+  min-height: 48px;
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.cinemaMap-placeItem:hover {
+  background-color: #f5f5f5;
+}
+
+.cinemaMap-markerbg {
+  flex-shrink: 0;
+  width: 36px;
+  min-height: 37px;
+  background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_number_blue.png') no-repeat;
+  margin-right: 6px;
+  margin-left: 2px;
+  position: static;
+  top: auto;
+  left: auto;
+  display: inline-block;
+}
+
+:root {
+  --marker-sprite-1: -10px;
+  --marker-sprite-2: -56px;
+  --marker-sprite-3: -102px;
+  --marker-sprite-4: -148px;
+  --marker-sprite-5: -194px;
+  --marker-sprite-6: -240px;
+  --marker-sprite-7: -286px;
+  --marker-sprite-8: -332px;
+  --marker-sprite-9: -378px;
+  --marker-sprite-10: -423px;
+  --marker-sprite-11: -470px;
+  --marker-sprite-12: -516px;
+  --marker-sprite-13: -562px;
+  --marker-sprite-14: -608px;
+  --marker-sprite-15: -654px;
+}
+
+.cinemaMap-marker_1 { background-position: 0 var(--marker-sprite-1); }
+.cinemaMap-marker_2 { background-position: 0 var(--marker-sprite-2); }
+.cinemaMap-marker_3 { background-position: 0 var(--marker-sprite-3); }
+.cinemaMap-marker_4 { background-position: 0 var(--marker-sprite-4); }
+.cinemaMap-marker_5 { background-position: 0 var(--marker-sprite-5); }
+.cinemaMap-marker_6 { background-position: 0 var(--marker-sprite-6); }
+.cinemaMap-marker_7 { background-position: 0 var(--marker-sprite-7); }
+.cinemaMap-marker_8 { background-position: 0 var(--marker-sprite-8); }
+.cinemaMap-marker_9 { background-position: 0 var(--marker-sprite-9); }
+.cinemaMap-marker_10 { background-position: 0 var(--marker-sprite-10); }
+.cinemaMap-marker_11 { background-position: 0 var(--marker-sprite-11); }
+.cinemaMap-marker_12 { background-position: 0 var(--marker-sprite-12); }
+.cinemaMap-marker_13 { background-position: 0 var(--marker-sprite-13); }
+.cinemaMap-marker_14 { background-position: 0 var(--marker-sprite-14); }
+.cinemaMap-marker_15 { background-position: 0 var(--marker-sprite-15); }
+
+.cinemaMap-info {
+  margin-left: 0;
+  flex: 1;
+}
+
+.cinemaMap-info h5 {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.cinemaMap-info span {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.cinemaMap-jibun {
+  color: #999;
+  font-size: 11px;
+}
+
+.cinemaMap-tel {
+  color: #009900;
+}
+
+.cinemaMap-placesList ul {
+  margin: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.cinemaMap-section {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto 24px auto;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 20px 20px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cinemaMap-searchBar {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cinemaMap-searchBar input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #f8f9fa;
+}
+
+.cinemaMap-searchBar button {
+  padding: 10px 18px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cinemaMap-searchBar button:hover {
+  background: #0056b3;
+}
+
+.cinemaMap-mapWrapper {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  position: relative;
+}
+
+.cinemaMap-selectedLocation {
+  margin-top: 14px;
+  font-size: 1rem;
+  color: #007bff;
+  text-align: center;
+}
+.cinemaMap-selectedLocation.empty {
+  color: #888;
+}
+
+@media (max-width: 600px) {
+  .cinemaMap-section {
+    max-width: 100vw;
+    padding: 10px 2vw 10px 2vw;
+  }
+  .cinemaMap-mapWrapper {
+    height: 260px;
+  }
+}
+
+.cinemaMapSection {
+  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+  max-width: 1080px;
+  max-height: 800px;
+  margin: 0 auto;
+  background: #f5f5f5;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cinemaMapSearchBar {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cinemaMapSearchBar input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #f8f9fa;
+}
+
+.cinemaMapSearchBar button {
+  padding: 10px 18px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cinemaMapSearchBar button:hover {
+  background: #0056b3;
+}
+
+.cinemaMapMapWrapper {
+  width: 100%;
+  max-width: 1000px;
+  height: 600px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  position: relative;
+  display: flex;
+}
+
+.cinemaMapMap {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+.cinemaMapPlacesList {
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+  border-left: 1px solid #eee;
+  overflow-y: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  z-index: 2;
+}
+
+.cinemaMapCustomTypeControl {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cinemaMapBtn {
+  padding: 6px 12px;
+  background-color: white;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  font-size: 12px;
+  margin: 0 2px;
+}
+
+.cinemaMapSelectedBtn {
+  padding: 6px 12px;
+  background-color: #2196F3;
+  color: white;
+  border: 1px solid #2196F3;
+  cursor: pointer;
+  font-size: 12px;
+  margin: 0 2px;
+}
+
+.cinemaMapCustomZoomControl {
+  position: absolute;
+  bottom: 90px;
+  right: 10px;
+  z-index: 1;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cinemaMapCustomZoomControl span {
+  display: block;
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  cursor: pointer;
+  margin: 2px 0;
+}
+
+.cinemaMapCustomZoomControl span img {
+  width: 15px;
+  height: 15px;
+  padding: 8px;
+}
+
+.cinemaMapRadiusBorder {
+  border: 1px solid #ddd;
+}
+
+.loadingMessage {
+  font-size: 1.2rem;
+  color: #666;
+  text-align: center;
+  padding: 20px;
+}
+
+.errorMessage {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border: 1px solid #ffcdd2;
+  text-align: center;
+}
+
+.errorSubMessage {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: #b71c1c;
+}
+
+@media (max-width: 900px) {
+  .cinemaMapMapWrapper {
+    flex-direction: column;
+    max-width: 100vw;
+    height: 420px;
+  }
+  .cinemaMapPlacesList {
+    width: 100vw;
+    max-width: 100vw;
+    border-left: none;
+    border-top: 1px solid #eee;
+    max-height: 180px;
+  }
+}
+
+.cinemaMapMapMini {
+  width: 1080px;
+  height: 600px;
+  background: #f4f6fa;
+  border-radius: 12px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 0 auto 32px auto;
+}
+
+@media (max-width: 900px) {
+  .cinemaMapMapMini {
+    max-width: 100vw;
+    width: 100%;
+    height: 260px;
+  }
+}
+
+.cinemaMapSearchPanel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 300px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 10;
+  padding: 12px 10px 10px 10px;
+}
+
+.cinemaMapSearchBar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cinemaMapPlacesList {
+  max-height: 450px;
+  overflow-y: auto;
+}
+
+.cinemaMapPlaceItem {
+  padding: 8px 4px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  background: #fff;
+  transition: background 0.15s;
+}
+
+.cinemaMapPlaceItem:hover,
+.cinemaMapPlaceItem.active {
+  background: #e3f2fd;
+} 
