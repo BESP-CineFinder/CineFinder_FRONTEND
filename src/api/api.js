@@ -1,7 +1,7 @@
 import axios from 'axios';
 import cookie from 'react-cookies';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://localhost';
 
 // 토큰 관리 함수들
 const getAccessToken = () => {
