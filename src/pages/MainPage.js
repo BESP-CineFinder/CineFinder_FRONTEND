@@ -166,8 +166,6 @@ const MainPage = () => {
         </div>
       </section>
 
-      <Geolocation />
-
       {/* 현재 상영중인 영화 섹션 */}
       <main className="main-content">
         <section className="section">

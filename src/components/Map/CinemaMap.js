@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import styles from "../utils/css/CinemaMap.module.css";
+import styles from "../../utils/css/CinemaMap.module.css";
 
 const MAX_PLACES = 15;
 
