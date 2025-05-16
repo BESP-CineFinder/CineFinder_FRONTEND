@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getMovieDetails, getScreenSchedules } from '../api/api';
 import { normalizeMovieKey } from '../utils/stringUtils';
+import { useQuery } from '@tanstack/react-query';
 import '../utils/css/TheaterSearchResultPage.css';
 
 // HTML 엔티티를 디코딩하는 함수
@@ -14,9 +15,6 @@ const decodeHtmlEntities = (text) => {
 const TheaterSearchResultPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchParams, setSearchParams] = useState(null);
 
   useEffect(() => {
@@ -25,50 +23,39 @@ const TheaterSearchResultPage = () => {
     }
   }, [location.state]);
 
-  useEffect(() => {
-    const fetchSearchResults = async () => {
-      if (!searchParams) return;  // searchParams가 없으면 API 호출하지 않음
+  // React Query를 사용한 검색 결과 캐싱
+  const { data: searchResults, isLoading, error } = useQuery({
+    queryKey: ['screenSchedules', searchParams],
+    queryFn: async () => {
+      if (!searchParams) return null;
       
-      try {
-        setLoading(true);
-        
-        if (!searchParams.lat || !searchParams.lng) {
-          setError('위치 정보가 필요합니다.');
-          setLoading(false);
-          return;
-        }
-
-        // API 요청 데이터 준비
-        const requestData = {
-          lat: searchParams.lat.toString(),
-          lng: searchParams.lng.toString(),
-          date: searchParams.date,
-          minTime: searchParams.minTime,
-          maxTime: searchParams.maxTime,
-          distance: searchParams.distance.toString(),
-          movieNames: []  // 항상 빈 배열로 설정
-        };
-
-        const data = await getScreenSchedules(requestData);
-        
-        if (!data || !Array.isArray(data)) {
-          console.error('API 응답이 올바르지 않습니다:', data);
-          setError('검색 결과를 불러오는데 실패했습니다.');
-          setLoading(false);
-          return;
-        }
-
-        setSearchResults(data);
-      } catch (err) {
-        setError('검색 결과를 불러오는데 실패했습니다.');
-        console.error('Error fetching search results:', err);
-      } finally {
-        setLoading(false);
+      if (!searchParams.lat || !searchParams.lng) {
+        throw new Error('위치 정보가 필요합니다.');
       }
-    };
 
-    fetchSearchResults();
-  }, [searchParams]);
+      const requestData = {
+        lat: searchParams.lat.toString(),
+        lng: searchParams.lng.toString(),
+        date: searchParams.date,
+        minTime: searchParams.minTime,
+        maxTime: searchParams.maxTime,
+        distance: searchParams.distance.toString(),
+        movieNames: []
+      };
+
+      const data = await getScreenSchedules(requestData);
+      
+      if (!data || !Array.isArray(data)) {
+        throw new Error('검색 결과를 불러오는데 실패했습니다.');
+      }
+
+      return data;
+    },
+    enabled: !!searchParams,
+    staleTime: 5 * 60 * 1000, // 5분 동안 캐시 유지
+    cacheTime: 30 * 60 * 1000, // 30분 동안 캐시 저장
+    retry: 1, // 실패 시 1번만 재시도
+  });
 
   const handleTheaterSelect = (theater, screening, chain) => {
     let url = '';
@@ -125,7 +112,7 @@ const TheaterSearchResultPage = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="theater-search-result-container">
         <div className="result-box">
@@ -144,7 +131,7 @@ const TheaterSearchResultPage = () => {
         <div className="result-box">
           <h1>검색 결과</h1>
           <div className="theater-list">
-            <div className="tsr-error">{error}</div>
+            <div className="tsr-error">{error.message}</div>
           </div>
         </div>
       </div>
@@ -156,7 +143,7 @@ const TheaterSearchResultPage = () => {
       <div className="result-box">
         <h1>검색 결과</h1>
         <div className="theater-list">
-          {searchResults.length === 0 ? (
+          {!searchResults || searchResults.length === 0 ? (
             <div className="tsr-no-results">검색 결과가 없습니다.</div>
           ) : (
             <div className="tsr-movie-list">
@@ -180,7 +167,6 @@ const TheaterSearchResultPage = () => {
                           <div className="tsr-screening-list-cards">
                             {screenings
                               .sort((a, b) => {
-                                // 시간 문자열을 Date 객체로 변환하여 비교
                                 const timeA = new Date(`2000-01-01T${a.start}`);
                                 const timeB = new Date(`2000-01-01T${b.start}`);
                                 return timeA - timeB;
