@@ -246,4 +246,20 @@ export const getMovieDetails = async (movieKey, title) => {
   }
 };
 
+export const getScreenSchedules = async (requestData) => {
+  try {
+    console.log('API 요청 데이터:', JSON.stringify(requestData, null, 2));
+    const response = await api.post('/api/screen/schedule', requestData);
+    
+    if (!response.data) {
+      throw new Error('상영 일정을 가져오는데 실패했습니다.');
+    }
+    
+    return response.data.payload;
+  } catch (error) {
+    console.error('Error fetching screen schedules:', error);
+    throw error;
+  }
+};
+
 export default api;

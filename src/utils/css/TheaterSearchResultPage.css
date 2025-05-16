@@ -158,36 +158,59 @@
 }
 
 .tsr-screening-card {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+  width: 160px;
+  height: 150px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  min-width: 120px;
-  max-width: 150px;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-  font-size: 1rem;
-  transition: box-shadow 0.2s;
+  justify-content: space-between;
 }
 .tsr-screening-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
-  border-color: #bdbdbd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.tsr-screening-time {
+.tsr-screening-name {
   font-weight: bold;
   color: #333;
-  margin-bottom: 0.5rem;
+  margin-bottom: 2px;
+  height: 24px;
+  line-height: 24px;
 }
 
 .tsr-screening-info {
-  color: #666;
-  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  height: 82px;
+  overflow: hidden;
 }
 
-.tsr-theater-name {
+.tsr-screening-info > div {
+  font-size: 0.9rem;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 20px;
+}
+
+.tsr-screening-info-remaining-seats {
+  height: 20px;
+}
+
+.tsr-screening-info-screen {
+  font-size: 0.9rem;
+  height: 40px;
+}
+
+.tsr-theater-time {
   color: #222;
   font-weight: 500;
   font-size: 0.98rem;

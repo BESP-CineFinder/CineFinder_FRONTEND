@@ -77,16 +77,16 @@ const TheaterSearchPage = () => {
       alert('지도를 클릭해 위치를 선택하세요.');
       return;
     }
-    const params = {
+    const searchParams = {
       lat: selectedLatLng.lat,
       lng: selectedLatLng.lng,
       date: selectedDate.toISOString().slice(0, 10),
-      startTime,
-      endTime
+      minTime: startTime,
+      maxTime: endTime,
+      distance: 3,
+      movieNames: []
     };
-    console.log('검색 파라미터:', params);
-    const searchParams = new URLSearchParams(params);
-    navigate(`/theater-search-result?${searchParams.toString()}`);
+    navigate('/theater-search-result', { state: searchParams });
   };
 
   return (
@@ -129,7 +129,7 @@ const TheaterSearchPage = () => {
         <StyledButton type="submit" text="영화관 찾기"/>
       </form>
       <div style={{ marginBottom: 0, marginTop: 0 }}>
-          <label>반경 1km 내 영화관 탐색 기준 정하기</label><br />
+          <label>반경 3km 내 영화관 탐색 기준 정하기</label><br />
           <span style={{ color: "#888" }}>지도를 클릭 or 장소 검색 후 위치를 선택하세요.</span>
         </div>
       {selectedLatLng ? (
