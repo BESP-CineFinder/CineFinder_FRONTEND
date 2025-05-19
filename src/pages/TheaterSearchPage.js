@@ -40,9 +40,13 @@ const TheaterSearchPage = () => {
   const [selectedLatLng, setSelectedLatLng] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startTime, setStartTime] = useState('18:00');
-  const [endTime, setEndTime] = useState('24:00');
+  const [endTime, setEndTime] = useState('23:59');
   const startTimeOptions = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`); // 00:00~23:00
-  const endTimeOptions = Array.from({ length: 24 }, (_, i) => `${(i+1).toString().padStart(2, '0')}:00`); // 01:00~24:00
+  const endTimeOptions = Array.from({ length: 24 }, (_, i) => {
+    const hour = i + 1;
+    if (hour === 24) return '23:59';
+    return `${hour.toString().padStart(2, '0')}:00`;
+  }); // 01:00~23:59
 
   // 오늘~7일 후까지만 선택 가능
   const today = new Date();
@@ -56,7 +60,7 @@ const TheaterSearchPage = () => {
     ? startTimeOptions.filter((time, idx) => idx >= currentHour)
     : startTimeOptions;
 
-  // 종료 시간은 시작 시간보다 이후 시간대만 선택 가능, 24:00까지만
+  // 종료 시간은 시작 시간보다 이후 시간대만 선택 가능
   const filteredEndTimeOptions = endTimeOptions.filter(time => time > startTime);
 
   useEffect(() => {
