@@ -80,13 +80,12 @@ const TheaterSearchResultPage = () => {
 
   const handlePosterClick = async (movie) => {
     try {
-      const movieKey = normalizeMovieKey(movie.name);
-      const details = await getMovieDetails(movieKey, movie.name);
+      const details = await getMovieDetails(movie.name);
       
       const movieData = {
         ...movie,
         ...details,
-        movieKey,
+        movieKey: movie.id,
         movieNm: movie.name,
         posterUrl: movie.poster,
         stills: details.stlls ? details.stlls.split('|') : [],
@@ -95,7 +94,7 @@ const TheaterSearchResultPage = () => {
               typeof details.vods === 'string' ? details.vods.split('|') : []
       };
 
-      navigate(`/movie/${movieKey}`, {
+      navigate(`/movie/${movie.id}`, {
         state: {
           movieData,
           title: movie.name
@@ -103,7 +102,7 @@ const TheaterSearchResultPage = () => {
       });
     } catch (error) {
       console.error('영화 상세 정보를 가져오는데 실패했습니다:', error);
-      navigate(`/movie/${normalizeMovieKey(movie.name)}`, {
+      navigate(`/movie/${movie.id}`, {
         state: {
           movieData: movie,
           title: movie.name

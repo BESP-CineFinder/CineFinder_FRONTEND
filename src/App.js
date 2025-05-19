@@ -26,7 +26,7 @@ function App() {
           </div>
         </Router>
       </AuthProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
   );
 }
 

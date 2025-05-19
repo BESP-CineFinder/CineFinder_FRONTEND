@@ -217,7 +217,7 @@ export const setNickname = async (googleSub, nickname) => {
 // 박스오피스 정보 조회
 export const getDailyBoxOffice = async () => {
   try {
-    const response = await api.get('/api/movie/daily-box-office');
+    const response = await api.get('/api/movie/box-office/daily');
     return response.data;
   } catch (error) {
     console.error('Get daily box office error:', error);
@@ -226,13 +226,9 @@ export const getDailyBoxOffice = async () => {
 };
 
 // 영화 상세 정보 조회
-export const getMovieDetails = async (movieKey, title) => {
+export const getMovieDetails = async (title) => {
   try {
-    if (!movieKey || !title) {
-      throw new Error('movieKey와 title은 필수 파라미터입니다.');
-    }
-
-    const response = await api.get(`/api/movie/movie-details?movieKey=${encodeURIComponent(movieKey)}&title=${encodeURIComponent(title)}`);
+    const response = await api.get(`/api/movie/details?title=${encodeURIComponent(title)}`);
     
     // 응답 구조 확인 및 데이터 추출
     if (response.data && response.data.payload) {

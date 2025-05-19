@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
-import Geolocation from '../components/Geolocation/Geolocation';
 import { useNavigate } from 'react-router-dom';
 import { getDailyBoxOffice, getMovieDetails } from '../api/api';
 
@@ -34,22 +33,20 @@ const MainPage = () => {
 
       const moviesWithDetails = await Promise.all(
         boxOfficeData.map(async (movie) => {
-
-          const movieKey = movie.movieKey;
           const title = movie.movieNm;
 
-          if (!movieKey || !title) {
+          if (!title) {
             console.error('필수 영화 정보가 없습니다:', movie);
             return null;
           }
 
           try {
-            const details = await getMovieDetails(movieKey, title);
+            const details = await getMovieDetails(title);
 
             return {
               ...movie,
               ...details,
-              movieKey,
+              movieKey: movie.movieKey,
               movieNm: title,
               posterUrl: details.posters ? details.posters.split('|')[0] : '',
               stills: details.stlls ? details.stlls.split('|') : [],
@@ -59,7 +56,6 @@ const MainPage = () => {
             };
           } catch (error) {
             console.error('영화 상세 정보를 가져오는데 실패했습니다:', {
-              movieKey,
               title,
               error
             });
