@@ -16,9 +16,7 @@ const CinemaMap = ({ onSelectLocation, selectedLatLng, mapHeight = 420 }) => {
   const [markers, setMarkers] = useState([]);
   const [activePlaceIdx, setActivePlaceIdx] = useState(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
-  const [selectedMarker, setSelectedMarker] = useState(null);
   const selectedMarkerRef = useRef(null);
-  const selectedInfoWindowRef = useRef(null);
 
   const getMarkerSpriteY = (idx) => (idx * 46) + 10;
 
@@ -49,7 +47,12 @@ const CinemaMap = ({ onSelectLocation, selectedLatLng, mapHeight = 420 }) => {
     if (markerRef.current) markerRef.current.setMap(null);
     markerRef.current = new window.kakao.maps.Marker({
       position: new window.kakao.maps.LatLng(selectedLatLng.lat, selectedLatLng.lng),
-      map: mapInstance.current
+      map: mapInstance.current,
+      image: new window.kakao.maps.MarkerImage(
+        '/assets/images/my-location.png',
+        new window.kakao.maps.Size(36, 37),
+        { spriteOrigin: new window.kakao.maps.Point(0, 0), spriteSize: new window.kakao.maps.Size(36, 37) }
+      )
     });
   }, [selectedLatLng]);
 
@@ -182,59 +185,19 @@ const CinemaMap = ({ onSelectLocation, selectedLatLng, mapHeight = 420 }) => {
     if (!mapInstance.current) return;
     const handleMapClick = (mouseEvent) => {
       const latlng = mouseEvent.latLng;
-      setSelectedMarker({ lat: latlng.getLat(), lng: latlng.getLng() });
+      // 바로 위치 설정
+      onSelectLocation({ lat: latlng.getLat(), lng: latlng.getLng() });
+      
+      // 마커 위치 업데이트
+      if (markerRef.current) {
+        markerRef.current.setPosition(latlng);
+      }
     };
     window.kakao.maps.event.addListener(mapInstance.current, 'click', handleMapClick);
     return () => {
       window.kakao.maps.event.removeListener(mapInstance.current, 'click', handleMapClick);
     };
-  }, []);
-
-  // 선택 마커 관리
-  useEffect(() => {
-    if (!mapInstance.current) return;
-    // 기존 선택 마커 제거
-    if (selectedMarkerRef.current) {
-      selectedMarkerRef.current.setMap(null);
-      selectedMarkerRef.current = null;
-    }
-    if (selectedInfoWindowRef.current) {
-      selectedInfoWindowRef.current.close();
-      selectedInfoWindowRef.current = null;
-    }
-    if (!selectedMarker) return;
-    // 새 마커 생성
-    const marker = new window.kakao.maps.Marker({
-      position: new window.kakao.maps.LatLng(selectedMarker.lat, selectedMarker.lng),
-      map: mapInstance.current,
-      zIndex: 3,
-      image: new window.kakao.maps.MarkerImage(
-        '/assets/images/my-location.png',
-        new window.kakao.maps.Size(36, 37),
-        { spriteOrigin: new window.kakao.maps.Point(0, 0), spriteSize: new window.kakao.maps.Size(36, 37) }
-      )
-    });
-    selectedMarkerRef.current = marker;
-    // 마커 클릭 시 InfoWindow
-    window.kakao.maps.event.addListener(marker, 'click', () => {
-      if (selectedInfoWindowRef.current) selectedInfoWindowRef.current.close();
-      const content = `
-        <div style="padding:10px;min-width:140px;max-width:200px;text-align:center;">
-          <div style="font-size:14px;margin-bottom:8px;">이 위치로 설정</div>
-          <button id="set-selected-location-btn" style="width:100%;padding:6px 0;background:#2196F3;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px;">이 위치로 설정</button>
-        </div>
-      `;
-      selectedInfoWindowRef.current = new window.kakao.maps.InfoWindow({ content, removable: true, zIndex: 2000 });
-      selectedInfoWindowRef.current.open(mapInstance.current, marker);
-      setTimeout(() => {
-        const btn = document.getElementById('set-selected-location-btn');
-        if (btn) btn.onclick = () => {
-          onSelectLocation({ lat: selectedMarker.lat, lng: selectedMarker.lng });
-          selectedInfoWindowRef.current.close();
-        };
-      }, 0);
-    });
-  }, [selectedMarker, onSelectLocation]);
+  }, [onSelectLocation]);
 
   if (error) {
     return (
