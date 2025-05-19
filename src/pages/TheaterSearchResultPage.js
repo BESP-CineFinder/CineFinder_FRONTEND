@@ -12,10 +12,28 @@ const decodeHtmlEntities = (text) => {
   return textarea.value;
 };
 
+// 지점 → 상영형식 → 상영관(스크린명) → 상영정보로 그룹핑하는 함수
+function groupByTheaterTypeScreen(screenings) {
+  const result = {};
+  screenings.forEach(s => {
+    const theaterName = s.theater.name;
+    const type = decodeHtmlEntities(s.film || '일반');
+    const screen = decodeHtmlEntities(s.screen || '');
+    if (!result[theaterName]) result[theaterName] = {};
+    if (!result[theaterName][type]) result[theaterName][type] = {};
+    if (!result[theaterName][type][screen]) result[theaterName][type][screen] = [];
+    result[theaterName][type][screen].push(s);
+  });
+  return result;
+}
+
+const CHAIN_LIST = ['CGV', '롯데시네마', '메가박스'];
+
 const TheaterSearchResultPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useState(null);
+  const [selectedChains, setSelectedChains] = useState(CHAIN_LIST);
 
   useEffect(() => {
     if (location.state) {
@@ -56,6 +74,14 @@ const TheaterSearchResultPage = () => {
     cacheTime: 30 * 60 * 1000, // 30분 동안 캐시 저장
     retry: 1, // 실패 시 1번만 재시도
   });
+
+  const handleChainFilter = (chain) => {
+    setSelectedChains((prev) =>
+      prev.includes(chain)
+        ? prev.filter((c) => c !== chain)
+        : [...prev, chain]
+    );
+  };
 
   const handleTheaterSelect = (theater, screening, chain) => {
     let url = '';
@@ -141,59 +167,78 @@ const TheaterSearchResultPage = () => {
     <div className="theater-search-result-container">
       <div className="result-box">
         <h1>검색 결과</h1>
+        <div className="tsr-chain-filter">
+          {CHAIN_LIST.map((chain) => (
+            <button
+              key={chain}
+              className={`tsr-chain-filter-btn${selectedChains.includes(chain) ? ' active' : ''}`}
+              onClick={() => handleChainFilter(chain)}
+              type="button"
+              aria-pressed={selectedChains.includes(chain)}
+            >
+              {chain}
+            </button>
+          ))}
+        </div>
         <div className="theater-list">
           {!searchResults || searchResults.length === 0 ? (
             <div className="tsr-no-results">검색 결과가 없습니다.</div>
           ) : (
             <div className="tsr-movie-list">
-              {searchResults.map((movie) => (
-                <div key={movie.id} className="tsr-movie-card">
-                  <div 
-                    className="tsr-movie-poster"
-                    onClick={() => handlePosterClick(movie)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <img src={movie.poster} alt={movie.name} />
-                    <h2 className="tsr-movie-title">{movie.name}</h2>
-                  </div>
-                  <div className="tsr-movie-info">
-                    <div className="tsr-theater-list">
-                      {Object.entries(movie.schedule).map(([chain, screenings]) => (
-                        <div key={chain} className="tsr-theater-card">
-                          <div className="tsr-theater-header">
-                            <span className={`tsr-theater-chain tsr-theater-chain-${chain === 'CGV' ? 'cgv' : chain === '메가박스' ? 'megabox' : 'lotte'}`}>{chain}</span>
-                          </div>
-                          <div className="tsr-screening-list-cards">
-                            {screenings
-                              .sort((a, b) => {
-                                const timeA = new Date(`2000-01-01T${a.start}`);
-                                const timeB = new Date(`2000-01-01T${b.start}`);
-                                return timeA - timeB;
-                              })
-                              .map((screening, idx) => (
-                              <div 
-                                key={`${screening.theater.id}-${screening.start}-${idx}`} 
-                                className="tsr-screening-card"
-                                onClick={() => handleTheaterSelect(screening.theater, screening, chain)}
-                              >
-                                <div className="tsr-screening-name">지점명: {screening.theater.name}</div>
-                                <div className="tsr-screening-info">
-                                  <div className="tsr-screening-info-remaining-seats">잔여석: {screening.remainingSeats}/{screening.totalSeats}</div>
-                                  <div className="tsr-screening-info-screen">상영관: {decodeHtmlEntities(screening.screen)}</div>
-                                  {screening.film && (
-                                    <div className="tsr-screening-info-platform">상영형식: {decodeHtmlEntities(screening.film)}</div>
-                                  )}
-                                </div>
-                                <div className="tsr-theater-time">{screening.start} ~ {screening.end}</div>
+              {searchResults
+                .filter((movie) => Object.keys(movie.schedule).some(chain => selectedChains.includes(chain)))
+                .map((movie) => {
+                  return (
+                    <div key={movie.id} className="tsr-movie-card">
+                      <div className="tsr-movie-poster-area" onClick={() => handlePosterClick(movie)} style={{ cursor: 'pointer' }}>
+                        <img src={movie.poster} alt={movie.name} className="tsr-movie-poster-large" />
+                        <div className="tsr-movie-title">{movie.name}</div>
+                      </div>
+                      <div className="tsr-movie-content-area">
+                        {Object.entries(movie.schedule)
+                          .filter(([chain]) => selectedChains.includes(chain))
+                          .map(([chain, screenings]) => {
+                            const grouped = groupByTheaterTypeScreen(screenings);
+                            return (
+                              <div key={chain} className="tsr-chain-block">
+                                <div className={`tsr-theater-chain tsr-theater-chain-${chain === 'CGV' ? 'cgv' : chain === '메가박스' ? 'megabox' : 'lotte'}`}>{chain}</div>
+                                {Object.entries(grouped).map(([theaterName, types]) => (
+                                  <div key={theaterName} className="tsr-theater-block">
+                                    <div className="tsr-theater-name-bar">{theaterName}</div>
+                                    {Object.entries(types).map(([type, screens]) => (
+                                      Object.entries(screens).map(([screen, screenings]) => (
+                                        <div key={type + screen} className="tsr-screen-block">
+                                          <div className="tsr-screen-bar">{type} {screen}</div>
+                                          <div className="tsr-screening-list-cards">
+                                            {screenings
+                                              .sort((a, b) => {
+                                                const timeA = new Date(`2000-01-01T${a.start}`);
+                                                const timeB = new Date(`2000-01-01T${b.start}`);
+                                                return timeA - timeB;
+                                              })
+                                              .map((screening, idx) => (
+                                                <div 
+                                                  key={`${screening.theater.id}-${screening.start}-${idx}`} 
+                                                  className="tsr-screening-card"
+                                                  onClick={() => handleTheaterSelect(screening.theater, screening, screening.chain)}
+                                                >
+                                                  <div className="tsr-theater-time">{screening.start} ~ {screening.end}</div>
+                                                  <div className="tsr-screening-info-remaining-seats">{screening.remainingSeats} / {screening.totalSeats}</div>
+                                                </div>
+                                              ))}
+                                          </div>
+                                        </div>
+                                      ))
+                                    ))}
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+                            );
+                          })}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
           )}
         </div>

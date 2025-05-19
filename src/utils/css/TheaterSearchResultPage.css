@@ -24,17 +24,42 @@
   background-color: white;
   border-radius: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  align-items: flex-start;
+}
+
+.tsr-movie-poster-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 260px;
+  max-width: 260px;
+}
+
+.tsr-movie-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-width: 0;
 }
 
 .tsr-movie-poster {
   position: relative;
   width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+  height: 300px;
   margin-right: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .tsr-movie-poster img {
   width: 100%;
-  height: auto;
+  height: 240px;
+  object-fit: cover;
   border-radius: 8px;
 }
 
@@ -42,17 +67,32 @@
   margin-top: 10px;
   font-size: 1.1rem;
   font-weight: 600;
-  text-align: center;
+  text-align: center; 
   color: #333;
+}
+
+.tsr-movie-info-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .tsr-movie-info {
   flex-grow: 1;
+  min-width: 400px;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .tsr-movie-title {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: bold;
+  text-align: center;
   margin-bottom: 1rem;
   color: #333;
 }
@@ -128,9 +168,10 @@
 }
 
 .tsr-theater-name {
-  color: #222;
+  font-size: 1rem;
   font-weight: 500;
-  min-width: 80px;
+  margin-bottom: 0.3rem;
+  color: #444;
 }
 
 .tsr-loading {
@@ -154,22 +195,24 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-top: 0.5rem;
+  min-width: 400px;
+  max-width: 800px;
 }
 
 .tsr-screening-card {
   background-color: #fff;
   border-radius: 8px;
-  padding: 6px;
-  margin: 8px;
+  padding: 10px 8px;
+  margin: 8px 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.2s;
-  width: 190px;
-  height: 150px;
+  width: 120px;
+  height: 80px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
 }
 .tsr-screening-card:hover {
   transform: translateY(-2px);
@@ -202,7 +245,9 @@
 }
 
 .tsr-screening-info-remaining-seats {
-  height: 20px;
+  font-size: 0.95rem;
+  color: #1a7f37;
+  font-weight: 500;
 }
 
 .tsr-screening-info-screen {
@@ -210,8 +255,126 @@
   height: 40px;
 }
 
+.tsr-type-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin: 1rem 0 0.5rem 0;
+  color: #222;
+}
+
+.tsr-type-group {
+  margin-bottom: 1.5rem;
+}
+
+.tsr-theater-group {
+  margin-bottom: 0.5rem;
+}
+
 .tsr-theater-time {
   color: #222;
   font-weight: 500;
   font-size: 0.98rem;
+  margin-bottom: 4px;
+}
+
+.tsr-movie-poster-large {
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
+  height: 300px;
+}
+
+.tsr-screen-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2a2a2a;
+  margin: 0.5rem 0 0.2rem 0.2rem;
+}
+
+.tsr-screen-group {
+  margin-bottom: 0.7rem;
+}
+
+.tsr-type-screen-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0.7rem 0 0.2rem 0;
+}
+
+.tsr-type-title-left {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #222;
+  flex: 1;
+  text-align: left;
+}
+
+.tsr-screen-title-right {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2a2a2a;
+  flex: 1;
+  text-align: right;
+}
+
+.tsr-type-screen-title {
+  font-size: 1.08rem;
+  font-weight: bold;
+  color: #222;
+  margin: 1.1rem 0 0.3rem 0.2rem;
+  letter-spacing: 0.01em;
+}
+
+.tsr-theater-name-bar {
+  font-size: 1.15rem;
+  font-weight: bold;
+  color: #222;
+  background: #f3f4f6;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.1rem;
+  text-align: center;
+}
+
+.tsr-screen-block {
+  margin-bottom: 1.2rem;
+}
+
+.tsr-screen-bar {
+  background: #e5e7eb;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #333;
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.tsr-chain-filter {
+  display: flex;
+  gap: 0.7rem;
+  margin-bottom: 1.2rem;
+  justify-content: flex-end;
+}
+
+.tsr-chain-filter-btn {
+  background: #f3f4f6;
+  color: #333;
+  border: 1px solid #e5e7eb;
+  border-radius: 1.5rem;
+  padding: 0.45rem 1.3rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border 0.15s;
+}
+.tsr-chain-filter-btn.active {
+  background: linear-gradient(90deg, #e31837 60%, #b71c1c 100%);
+  color: #fff;
+  border: 1.5px solid #b71c1c;
+}
+.tsr-chain-filter-btn:focus {
+  outline: 2px solid #b71c1c;
 } 
