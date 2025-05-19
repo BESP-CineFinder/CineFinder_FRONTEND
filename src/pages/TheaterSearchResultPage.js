@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getMovieDetails, getScreenSchedules } from '../api/api';
-import { normalizeMovieKey } from '../utils/stringUtils';
 import { useQuery } from '@tanstack/react-query';
 import '../utils/css/TheaterSearchResultPage.css';
+import FilterButton from '../components/Button/Filter';
 
 // HTML 엔티티를 디코딩하는 함수
 const decodeHtmlEntities = (text) => {
@@ -27,19 +27,46 @@ function groupByTheaterTypeScreen(screenings) {
   return result;
 }
 
-const CHAIN_LIST = ['CGV', '롯데시네마', '메가박스'];
+const CHAIN_LIST = [
+  { name: 'CGV', color: 'linear-gradient(90deg, #e31837 60%, #b71c1c 100%)' },
+  { name: '롯데시네마', color: 'linear-gradient(90deg, #ed1c24 60%, #ff6f61 100%)' },
+  { name: '메가박스', color: 'linear-gradient(90deg, #4a1e8f 60%, #6c2eb7 100%)' },
+];
 
 const TheaterSearchResultPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useState(null);
-  const [selectedChains, setSelectedChains] = useState(CHAIN_LIST);
+  const [selectedChains, setSelectedChains] = useState(CHAIN_LIST.map(c => c.name));
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const filterRef = useRef(null);
 
   useEffect(() => {
     if (location.state) {
       setSearchParams(location.state);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handleClick = (e) => {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [filterOpen]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // React Query를 사용한 검색 결과 캐싱
   const { data: searchResults, isLoading, error } = useQuery({
@@ -137,6 +164,13 @@ const TheaterSearchResultPage = () => {
     }
   };
 
+  const handleScrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="theater-search-result-container">
@@ -167,18 +201,36 @@ const TheaterSearchResultPage = () => {
     <div className="theater-search-result-container">
       <div className="result-box">
         <h1>검색 결과</h1>
-        <div className="tsr-chain-filter">
-          {CHAIN_LIST.map((chain) => (
-            <button
-              key={chain}
-              className={`tsr-chain-filter-btn${selectedChains.includes(chain) ? ' active' : ''}`}
-              onClick={() => handleChainFilter(chain)}
-              type="button"
-              aria-pressed={selectedChains.includes(chain)}
+        <div className="tsr-chain-filter-bar">
+          <span onClick={() => setFilterOpen((v) => !v)} aria-label="필터 열기" style={{display:'inline-flex', cursor:'pointer'}}>
+            <FilterButton />
+          </span>
+          {showScrollTop && (
+            <button 
+              className="tsr-scroll-to-top-btn" 
+              onClick={handleScrollToTop}
+              aria-label="맨 위로 이동"
             >
-              {chain}
+              <svg viewBox="0 0 24 24">
+                <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+              </svg>
             </button>
-          ))}
+          )}
+          {filterOpen && (
+            <div className="tsr-chain-filter-popover" ref={filterRef}>
+              {CHAIN_LIST.map((chain) => (
+                <label key={chain.name} className="tsr-chain-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedChains.includes(chain.name)}
+                    onChange={() => handleChainFilter(chain.name)}
+                  />
+                  <span className="tsr-chain-checkbox-color" style={{ background: chain.color }} />
+                  <span className="tsr-chain-checkbox-text">{chain.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
         <div className="theater-list">
           {!searchResults || searchResults.length === 0 ? (

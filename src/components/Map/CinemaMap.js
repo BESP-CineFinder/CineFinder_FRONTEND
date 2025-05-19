@@ -287,6 +287,7 @@ const CinemaMap = ({ onSelectLocation, selectedLatLng, mapHeight = 420 }) => {
               onChange={e => setSearchKeyword(e.target.value)}
               placeholder="주소 또는 장소 검색"
               aria-label="주소 또는 장소 검색"
+              onKeyDown={e => { if (e.key === 'Enter') { handleSearch(); } }}
             />
             <button onClick={handleSearch}>검색</button>
           </div>

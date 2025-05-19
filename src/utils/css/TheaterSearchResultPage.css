@@ -377,4 +377,110 @@
 }
 .tsr-chain-filter-btn:focus {
   outline: 2px solid #b71c1c;
+}
+
+.tsr-chain-filter-bar {
+  position: fixed;
+  bottom: 40px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tsr-scroll-to-top-btn {
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  transition: all 0.15s ease;
+}
+
+.tsr-scroll-to-top-btn:hover {
+  background: #f3f4f6;
+  border: 1.5px solid #b71c1c;
+  transform: translateY(-2px);
+}
+
+.tsr-scroll-to-top-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: #444;
+}
+
+.tsr-filter-icon-btn {
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  transition: background 0.15s, border 0.15s;
+  margin-right: 0.2rem;
+}
+.tsr-filter-icon-btn:hover {
+  background: #f3f4f6;
+  border: 1.5px solid #b71c1c;
+}
+.tsr-filter-icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: #444;
+}
+
+.tsr-chain-filter-popover {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 0.5rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  min-width: 200px;
+  z-index: 1001;
+}
+
+.tsr-chain-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 1.08rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.tsr-chain-checkbox-label input[type="checkbox"] {
+  accent-color: #b71c1c;
+  width: 18px;
+  height: 18px;
+  margin-right: 0.2rem;
+}
+.tsr-chain-checkbox-color {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  margin-right: 0.1rem;
+  border: 2px solid #e5e7eb;
+}
+.tsr-chain-checkbox-text {
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 } 
