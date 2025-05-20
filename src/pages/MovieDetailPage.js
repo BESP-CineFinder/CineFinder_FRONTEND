@@ -41,6 +41,12 @@ const MovieDetailPage = () => {
     return <div className="error">영화 정보를 찾을 수 없습니다.</div>;
   }
 
+  // movieId가 없으면 에러 처리
+  if (!movie.movieId) {
+    console.error('영화 ID가 없습니다.');
+    return <div className="error">영화 정보가 올바르지 않습니다.</div>;
+  }
+
   const handlePrevVod = () => {
     setCurrentVodIndex((prev) => (prev === 0 ? movie.vods.length - 1 : prev - 1));
   };
@@ -48,7 +54,6 @@ const MovieDetailPage = () => {
     setCurrentVodIndex((prev) => (prev === movie.vods.length - 1 ? 0 : prev + 1));
   };
 
-  
   // 유효한 예고편이 있는지 확인
   const hasValidVods = Array.isArray(movie.vods) && movie.vods.length > 0 && movie.vods[0];
 

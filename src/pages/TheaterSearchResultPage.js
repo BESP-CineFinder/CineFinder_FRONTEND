@@ -134,10 +134,10 @@ const TheaterSearchResultPage = () => {
   const handlePosterClick = async (movie) => {
     try {
       const details = await getMovieDetails(movie.name);
-      
       const movieData = {
         ...movie,
         ...details,
+        movieId: movie.id,
         movieKey: movie.id,
         movieNm: movie.name,
         posterUrl: movie.poster,
@@ -157,7 +157,11 @@ const TheaterSearchResultPage = () => {
       console.error('영화 상세 정보를 가져오는데 실패했습니다:', error);
       navigate(`/movie/${movie.id}`, {
         state: {
-          movieData: movie,
+          movieData: {
+            ...movie,
+            movieId: movie.id,
+            movieKey: movie.id
+          },
           title: movie.name
         }
       });
