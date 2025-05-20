@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import '../utils/css/MovieDetailPage.css';
+import styled from 'styled-components';
 
 // 한글 제목 정제 함수
 const cleanTitle = (title) => (title || '').replace(/!HS|!HE|\*/g, '').trim();
@@ -10,6 +11,20 @@ const getEmbeddableVodUrl = (vodUrl) => {
   if (!vodUrl) return '';
   return vodUrl;
 };
+
+const ChatButton = styled.button`
+  padding: 10px 20px;
+  background: #ff4081;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 20px;
+  
+  &:hover {
+    background: #f50057;
+  }
+`;
 
 const MovieDetailPage = () => {
   const { movieKey } = useParams();
@@ -36,6 +51,10 @@ const MovieDetailPage = () => {
   
   // 유효한 예고편이 있는지 확인
   const hasValidVods = Array.isArray(movie.vods) && movie.vods.length > 0 && movie.vods[0];
+
+  const handleChatClick = () => {
+    navigate(`/chat/${movie.movieId}`);
+  };
 
   return (
     <div className="movie-detail-page">
@@ -137,6 +156,10 @@ const MovieDetailPage = () => {
           </div>
         </section>
       )}
+
+      <ChatButton onClick={handleChatClick}>
+        채팅방 입장하기
+      </ChatButton>
     </div>
   );
 };
