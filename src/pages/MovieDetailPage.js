@@ -12,18 +12,39 @@ const getEmbeddableVodUrl = (vodUrl) => {
   return vodUrl;
 };
 
-const ChatButton = styled.button`
-  padding: 10px 20px;
-  background: #ff4081;
-  color: white;
+const ActionButton = styled.button`
+  padding: 12px 24px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 20px;
+  transition: all 0.2s ease;
+  margin-left: 10px;
   
-  &:hover {
-    background: #f50057;
+  &.reserve-button {
+    background: #ff4081;
+    color: white;
+    
+    &:hover {
+      background: #f50057;
+    }
   }
+  
+  &.chat-button {
+    background: #3a3a3a;
+    color: white;
+    
+    &:hover {
+      background: #4a4a4a;
+    }
+  }
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
 `;
 
 const MovieDetailPage = () => {
@@ -36,6 +57,8 @@ const MovieDetailPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  console.log(movie);
 
   if (!movie) {
     return <div className="error">영화 정보를 찾을 수 없습니다.</div>;
@@ -58,7 +81,20 @@ const MovieDetailPage = () => {
   const hasValidVods = Array.isArray(movie.vods) && movie.vods.length > 0 && movie.vods[0];
 
   const handleChatClick = () => {
-    navigate(`/chat/${movie.movieId}`);
+    navigate(`/chat/${movie.movieId}`, {
+      state: {
+        movieData: {
+          movieId: movie.movieId,
+          movieNm: movie.movieNm,
+          plotText: movie.plotText,
+          posterUrl: movie.posterUrl,
+          directors: movie.directors,
+          actors: movie.actors,
+          genre: movie.genre,
+          releaseDate: movie.releaseDate,
+        }
+      }
+    });
   };
 
   return (
@@ -97,12 +133,20 @@ const MovieDetailPage = () => {
               </div>
 
               <div className="movie-actions">
-                <button 
-                  className="reserve-button"
-                  onClick={() => navigate(`/theater-search?movieId=${movieKey}`)}
-                >
-                  예매하기
-                </button>
+                <ButtonContainer>
+                  <ActionButton 
+                    className="reserve-button"
+                    onClick={() => navigate(`/theater-search?movieId=${movieKey}`)}
+                  >
+                    예매하기
+                  </ActionButton>
+                  <ActionButton 
+                    className="chat-button"
+                    onClick={handleChatClick}
+                  >
+                    채팅방 입장
+                  </ActionButton>
+                </ButtonContainer>
               </div>
             </div>
           </div>
@@ -161,10 +205,6 @@ const MovieDetailPage = () => {
           </div>
         </section>
       )}
-
-      <ChatButton onClick={handleChatClick}>
-        채팅방 입장하기
-      </ChatButton>
     </div>
   );
 };

@@ -8,19 +8,30 @@ const MyPageContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
+  background: #1a1a1a;
 `;
 
 const PageTitle = styled.h1`
   color: #e8e8e8;
   margin-bottom: 2rem;
   font-size: 2rem;
+  padding-top: 1rem;
+`;
+
+const SectionTitle = styled.h2`
+  color: #e8e8e8;
+  margin: 2rem 0 1rem;
+  font-size: 1.5rem;
 `;
 
 const FavoriteMoviesGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 2rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
+  padding-bottom: 2rem;
 `;
 
 const MovieCard = styled.div`
@@ -29,9 +40,11 @@ const MovieCard = styled.div`
   overflow: hidden;
   transition: transform 0.2s;
   cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   
   &:hover {
     transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
   }
 `;
 
@@ -59,6 +72,17 @@ const EmptyMessage = styled.div`
   color: #888;
   padding: 2rem;
   font-size: 1.2rem;
+  background: #212121;
+  border-radius: 10px;
+  margin: 1rem 0;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 64px);
+  background: #1a1a1a;
 `;
 
 const MyPage = () => {
@@ -99,18 +123,16 @@ const MyPage = () => {
 
   if (loading) {
     return (
-      <MyPageContainer>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-          <BallLoader />
-        </div>
-      </MyPageContainer>
+      <LoadingContainer>
+        <BallLoader />
+      </LoadingContainer>
     );
   }
 
   return (
     <MyPageContainer>
       <PageTitle>마이페이지</PageTitle>
-      <h2>즐겨찾기한 영화</h2>
+      <SectionTitle>즐겨찾기한 영화</SectionTitle>
       {favoriteMovies.length === 0 ? (
         <EmptyMessage>즐겨찾기한 영화가 없습니다.</EmptyMessage>
       ) : (

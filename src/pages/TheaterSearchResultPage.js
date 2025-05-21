@@ -142,7 +142,7 @@ const TheaterSearchResultPage = () => {
         movieNm: movie.name,
         posterUrl: movie.poster,
         stills: details.stlls ? details.stlls.split('|') : [],
-        actors: Array.isArray(details.actors) ? details.actors.slice(0, 5) : [],
+        actors: typeof details.actors === 'string' ? details.actors.split(' | ').slice(0, 5) : [],
         vods: Array.isArray(details.vods) ? details.vods : 
               typeof details.vods === 'string' ? details.vods.split('|') : []
       };
