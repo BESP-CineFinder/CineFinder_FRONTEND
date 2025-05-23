@@ -3,7 +3,7 @@ import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
 import { useNavigate } from 'react-router-dom';
-import { getDailyBoxOffice, getMovieDetails } from '../api/api';
+import { getDailyBoxOffice } from '../api/api';
 
 const MainPage = () => {
   const [loading, setLoading] = useState(true);
@@ -24,48 +24,23 @@ const MainPage = () => {
       setLoading(true);
       const response = await getDailyBoxOffice();
       
-      // 응답 구조 확인 및 데이터 추출
       if (!response.payload || !Array.isArray(response.payload)) {
         throw new Error('박스오피스 데이터가 올바르지 않습니다.');
       }
 
-      const boxOfficeData = response.payload;
+      const movies = response.payload.map(movie => ({
+        ...movie,
+        movieDetails: {
+          ...movie.movieDetails,
+          posters: movie.movieDetails?.posters ? movie.movieDetails.posters.split('|')[0] : '',
+          stlls: movie.movieDetails?.stlls ? movie.movieDetails.stlls.split('|') : [],
+          vods: movie.movieDetails?.vods ? movie.movieDetails.vods.split('|') : [],
+          directors: movie.movieDetails?.directors ? movie.movieDetails.directors.split(',') : [],
+          actors: movie.movieDetails?.actors ? movie.movieDetails.actors.split(',') : []
+        }
+      }));
 
-      const moviesWithDetails = await Promise.all(
-        boxOfficeData.map(async (movie) => {
-          const title = movie.movieNm;
-
-          if (!title) {
-            console.error('필수 영화 정보가 없습니다:', movie);
-            return null;
-          }
-
-          try {
-            const details = await getMovieDetails(title);
-
-            return {
-              ...movie,
-              ...details,
-              movieKey: movie.movieKey,
-              movieNm: title,
-              posterUrl: details.posters ? details.posters.split('|')[0] : '',
-              stills: details.stlls ? details.stlls.split('|') : [],
-              actors: Array.isArray(details.actors) ? details.actors.slice(0, 5) : [],
-              vods: Array.isArray(details.vods) ? details.vods : 
-                    typeof details.vods === 'string' ? details.vods.split('|') : []
-            };
-          } catch (error) {
-            console.error('영화 상세 정보를 가져오는데 실패했습니다:', {
-              title,
-              error
-            });
-            return null;
-          }
-        })
-      );
-      
-      const validMovies = moviesWithDetails.filter(movie => movie !== null);
-      setBoxOfficeMovies(validMovies);
+      setBoxOfficeMovies(movies);
     } catch (err) {
       setError('영화 정보를 불러오는데 실패했습니다.');
       console.error(err);
@@ -133,8 +108,14 @@ const MainPage = () => {
   const handleDetailClick = (movie) => {
     navigate(`/movie/${movie.movieKey}`, { 
       state: { 
-        movieData: movie,
-        title: movie.movieNm 
+        movieData: {
+          ...movie.movieDetails,
+          movieId: movie.movieId,
+          movieKey: movie.movieKey,
+          movieNm: movie.movieNm,
+          rank: movie.rank,
+          title: movie.movieNm
+        }
       } 
     });
   };
@@ -167,7 +148,7 @@ const MainPage = () => {
         <section className="section">
           <h2 className="section-title">
             <span className="section-title-emoji">🎬</span>
-            박스오피스
+            DailyBoxOffice
           </h2>
           {loading ? (
             <div className="loading">로딩중...</div>
@@ -193,7 +174,7 @@ const MainPage = () => {
                   <div key={movie.movieKey} className="movie-card">
                     <div className="main-movie-poster">
                       <img
-                        src={movie.posterUrl}
+                        src={movie.movieDetails?.posters || 'https://via.placeholder.com/300x450'}
                         alt={movie.movieNm}
                       />
                       <div className="movie-overlay">
@@ -205,7 +186,7 @@ const MainPage = () => {
                         </button>
                         <button 
                           className="movie-button theater-button"
-                          onClick={() => navigate(`/theater-search?movieId=${movie.movieKey}`)}
+                          onClick={() => navigate(`/theater-search?movieId=${movie.movieId}`)}
                         >
                           예매하기
                         </button>
@@ -214,6 +195,7 @@ const MainPage = () => {
                     <h3 className="movie-title">
                       {cleanCardTitle(movie.movieNm)}
                     </h3>
+                    <div className="movie-rank">순위: {movie.rank}위</div>
                   </div>
                 ))}
               </div>

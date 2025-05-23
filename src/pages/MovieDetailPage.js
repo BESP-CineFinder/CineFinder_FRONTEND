@@ -58,21 +58,14 @@ const MovieDetailPage = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  console.log(movie);
-
   if (!movie) {
     return <div className="error">영화 정보를 찾을 수 없습니다.</div>;
-  }
-
-  // movieId가 없으면 에러 처리
-  if (!movie.movieId) {
-    console.error('영화 ID가 없습니다.');
-    return <div className="error">영화 정보가 올바르지 않습니다.</div>;
   }
 
   const handlePrevVod = () => {
     setCurrentVodIndex((prev) => (prev === 0 ? movie.vods.length - 1 : prev - 1));
   };
+
   const handleNextVod = () => {
     setCurrentVodIndex((prev) => (prev === movie.vods.length - 1 ? 0 : prev + 1));
   };
@@ -85,13 +78,14 @@ const MovieDetailPage = () => {
       state: {
         movieData: {
           movieId: movie.movieId,
-          movieNm: movie.movieNm,
+          movieNm: movie.movieNm || movie.title,
           plotText: movie.plotText,
-          posterUrl: movie.posterUrl,
+          posterUrl: movie.posters,
           directors: movie.directors,
           actors: movie.actors,
           genre: movie.genre,
           releaseDate: movie.releaseDate,
+          title: movie.movieNm || movie.title
         }
       }
     });
@@ -99,14 +93,14 @@ const MovieDetailPage = () => {
 
   return (
     <div className="movie-detail-page">
-      <div className="movie-backdrop" style={{ backgroundImage: `url(${movie.posterUrl})` }}>
+      <div className="movie-backdrop" style={{ backgroundImage: `url(${movie.posters})` }}>
         <div className="backdrop-overlay">
           <div className="movie-info">
             <div className="movie-poster">
-              <img src={movie.posterUrl} alt={cleanTitle(movie.movieNm)} />
+              <img src={movie.posters} alt={cleanTitle(movie.title)} />
             </div>
             <div className="movie-details">
-              <h1 className="movie-title">{cleanTitle(movie.movieNm)}</h1>
+              <h1 className="movie-title">{cleanTitle(movie.title)}</h1>
               {movie.titleEng && <h2 className="movie-original-title">{movie.titleEng}</h2>}
               
               <div className="movie-meta">
@@ -114,6 +108,7 @@ const MovieDetailPage = () => {
                 {movie.genre && <span>{movie.genre}</span>}
                 {movie.runtime && <span>{movie.runtime}분</span>}
                 {movie.ratingGrade && <span>{movie.ratingGrade}</span>}
+                {movie.rank && <span>박스오피스 {movie.rank}위</span>}
               </div>
 
               <div className="movie-plot">
@@ -136,7 +131,7 @@ const MovieDetailPage = () => {
                 <ButtonContainer>
                   <ActionButton 
                     className="reserve-button"
-                    onClick={() => navigate(`/theater-search?movieId=${movieKey}`)}
+                    onClick={() => navigate(`/theater-search?movieId=${movie.movieId}`)}
                   >
                     예매하기
                   </ActionButton>
@@ -153,7 +148,7 @@ const MovieDetailPage = () => {
         </div>
       </div>
 
-      {/* 예고편 슬라이더 - 유효한 예고편이 있을 때만 표시 */}
+      {/* 예고편 슬라이더 */}
       {hasValidVods && (
         <section className="movie-vods">
           <h2>예고편</h2>
@@ -190,11 +185,11 @@ const MovieDetailPage = () => {
       )}
 
       {/* 스틸컷 */}
-      {Array.isArray(movie.stills) && movie.stills.length > 0 && (
+      {Array.isArray(movie.stlls) && movie.stlls.length > 0 && (
         <section className="movie-stills">
           <h2>스틸컷</h2>
           <div className="stills-grid">
-            {movie.stills.map((still, idx) => (
+            {movie.stlls.map((still, idx) => (
               <img
                 key={idx}
                 src={still}

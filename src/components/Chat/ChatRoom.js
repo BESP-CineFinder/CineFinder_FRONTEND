@@ -4,7 +4,6 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import styled from 'styled-components';
 import { AuthContext } from '../../utils/auth/contexts/AuthProvider';
-import axios from 'axios';
 import Toast from '../common/Toast';
 
 const ChatContainer = styled.div`
@@ -72,7 +71,7 @@ const MovieDescription = styled.div`
   font-size: 0.9rem;
   line-height: 1.5;
   overflow-y: auto;
-  max-height: 200px;
+  max-height: 80px;
   padding-right: 10px;
   
   &::-webkit-scrollbar {
@@ -100,7 +99,7 @@ const MovieDetails = styled.div`
 
 const DetailItem = styled.div`
   display: flex;
-  align-items: center;
+  text-align: left;
   gap: 8px;
   
   &::before {
@@ -109,26 +108,11 @@ const DetailItem = styled.div`
   }
 `;
 
-const RoomInfo = styled.div`
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #333;
-`;
-
-const RoomTitle = styled.h2`
-  color: #fff;
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-`;
-
-const RoomDescription = styled.p`
-  color: #888;
-  font-size: 0.9rem;
-`;
-
 const ParticipantsList = styled.div`
   flex: 1;
   overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  padding-right: 10px;
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -151,6 +135,11 @@ const ParticipantsTitle = styled.h3`
   margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 1px solid #333;
+  position: sticky;
+  top: 0;
+  background: #212121;
+  z-index: 1;
+  padding-top: 10px;
 `;
 
 const ParticipantItem = styled.div`
@@ -161,6 +150,7 @@ const ParticipantItem = styled.div`
   font-size: 0.9rem;
   border-radius: 4px;
   transition: background-color 0.2s;
+  margin-bottom: 4px;
   
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -172,6 +162,13 @@ const ParticipantItem = styled.div`
     margin-right: 8px;
     font-size: 1.2rem;
   }
+`;
+
+const ParticipantsCount = styled.div`
+  color: #888;
+  font-size: 0.8rem;
+  margin-top: 5px;
+  text-align: right;
 `;
 
 const LeaveButton = styled.button`
@@ -315,43 +312,10 @@ const ChatRoom = () => {
   };
 
   const handleLeave = () => {
-    if (user) {
-      const leaveMessage = {
-        type: 'LEAVE',
-        movieId,
-        senderId: user.payload.userId,
-        nickName: user.payload.nickname,
-        timestamp: new Date().toISOString()
-      };
-
-      if (stompClient && isConnected) {
-        stompClient.publish({
-          destination: `/app/chat-${movieId}/leave`,
-          body: JSON.stringify(leaveMessage)
-        });
-      } else {
-        const tempSocket = new SockJS(process.env.REACT_APP_WEBSOCKET_URL || 'https://localhost/CineFinder-ws');
-        const tempClient = new Client({
-          webSocketFactory: () => tempSocket,
-          onConnect: () => {
-            tempClient.publish({
-              destination: `/app/chat-${movieId}/leave`,
-              body: JSON.stringify(leaveMessage)
-            });
-            setTimeout(() => {
-              tempClient.deactivate();
-            }, 1000);
-          }
-        });
-        tempClient.activate();
-      }
+    if (stompClient) {
+      stompClient.deactivate();
     }
-    
-    showToast('채팅방을 나가셨습니다.');
-    
-    setTimeout(() => {
-      navigate(-1);
-    }, 1000);
+    navigate(-1);
   };
 
   useEffect(() => {
@@ -402,7 +366,6 @@ const ChatRoom = () => {
       onDisconnect: () => {
         console.log('Disconnected from WebSocket');
         setIsConnected(false);
-        handleLeave();
       },
       onStompError: (frame) => {
         console.error('STOMP error:', frame);
@@ -465,7 +428,12 @@ const ChatRoom = () => {
     <ChatContainer>
       <ChatSidebar>
         <ParticipantsList>
-          <ParticipantsTitle>참여자 ({participants.size})</ParticipantsTitle>
+          <ParticipantsTitle>
+            참여자 목록
+            <ParticipantsCount>
+              {participants.size}명 참여 중
+            </ParticipantsCount>
+          </ParticipantsTitle>
           {Array.from(participants).map((nickname, index) => (
             <ParticipantItem key={index}>{nickname}</ParticipantItem>
           ))}

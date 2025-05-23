@@ -28,11 +28,14 @@
 }
 
 .tsr-movie-poster-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 260px;
-  max-width: 260px;
+  position: relative;
+  width: 200px;
+  height: 300px;
+  margin-right: 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .tsr-movie-content-area {
@@ -90,11 +93,19 @@
 }
 
 .tsr-movie-title {
-  font-size: 1.3rem;
-  font-weight: bold;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
   text-align: center;
-  margin-bottom: 1rem;
-  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tsr-theater-list {
@@ -278,10 +289,10 @@
 }
 
 .tsr-movie-poster-large {
-  width: 220px;
-  min-width: 220px;
-  max-width: 220px;
-  height: 300px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
 .tsr-screen-title {
@@ -483,4 +494,8 @@
   font-size: 1.08rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+.tsr-movie-poster-area:hover .tsr-movie-poster-large {
+  transform: scale(1.05);
 } 

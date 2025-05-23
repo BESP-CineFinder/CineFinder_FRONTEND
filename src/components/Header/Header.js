@@ -7,7 +7,6 @@ import '../../utils/css/Header.css';
 const Header = () => {
     const { user, setUser } = useContext(AuthContext);
     const navigate = useNavigate();
-    const location = useLocation();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

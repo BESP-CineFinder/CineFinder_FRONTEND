@@ -258,4 +258,40 @@ export const getScreenSchedules = async (requestData) => {
   }
 };
 
+// 즐겨찾기 영화 목록 조회
+export const getFavoriteMovieList = async (userId) => {
+  try {
+    const response = await api.get(`/api/favorite/favorite-movie-list?userId=${userId}`);
+    console.log(response)
+    return response.data;
+  } catch (error) {
+    console.error('Get favorite movie list error:', error);
+    throw error;
+  }
+};
+
+// 즐겨찾기 추가/제거
+export const updateFavorite = async (favoriteRequestDto) => {
+  try {
+    const response = await api.post('/api/favorite', favoriteRequestDto);
+    console.log(response)
+    return response.data;
+  } catch (error) {
+    console.error('Update favorite error:', error);
+    throw error;
+  }
+};
+
+// 즐겨찾기 여부 확인
+export const checkFavorite = async (userId, movieId) => {
+  try {
+    const response = await api.get(`/api/favorite?userId=${userId}&movieId=${movieId}`);
+    console.log(response)
+    return response.data;
+  } catch (error) {
+    console.error('Check favorite error:', error);
+    throw error;
+  }
+};
+
 export default api;

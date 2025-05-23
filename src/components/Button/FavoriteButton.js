@@ -1,45 +1,81 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { isFavoriteMovie, addFavoriteMovie, removeFavoriteMovie } from '../../utils/favoriteUtils';
+import { isFavoriteMovie, updateFavoriteMovie } from '../../utils/favoriteUtils';
 
 const FavoriteButtonWrapper = styled.button`
-  background: none;
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
   border: none;
+  border-radius: 50%;
   cursor: pointer;
   padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s;
+  transition: all 0.2s;
+  z-index: 2;
   
   &:hover {
     transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.8);
   }
   
   svg {
-    width: 24px;
-    height: 24px;
-    fill: ${props => props.isFavorite ? '#ff4081' : '#888'};
+    width: 20px;
+    height: 20px;
+    fill: ${props => props.isFavorite ? '#ff4081' : '#ffffff'};
+    transition: fill 0.2s;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 `;
 
-const FavoriteButton = ({ movieId, onToggle }) => {
+const FavoriteButton = ({ userId, movieId, onToggle }) => {
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    setIsFavorite(isFavoriteMovie(movieId));
-  }, [movieId]);
+    const checkFavoriteStatus = async () => {
+      if (!userId || !movieId) return;
+      
+      try {
+        const response = await isFavoriteMovie(userId, movieId);
+        if (response && response.success) {
+          setIsFavorite(response.payload);
+        }
+      } catch (error) {
+        console.error('즐겨찾기 상태 확인 실패:', error);
+      }
+    };
+    
+    checkFavoriteStatus();
+  }, [userId, movieId]);
 
-  const handleClick = (e) => {
+  const handleClick = async (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (isFavorite) {
-      removeFavoriteMovie(movieId);
-    } else {
-      addFavoriteMovie(movieId);
-    }
-    setIsFavorite(!isFavorite);
-    if (onToggle) {
-      onToggle(!isFavorite);
+    if (isLoading || !userId || !movieId) return;
+
+    setIsLoading(true);
+    try {
+      const response = await updateFavoriteMovie(userId, movieId);
+      if (response && response.success) {
+        setIsFavorite(!isFavorite);
+        if (onToggle) {
+          onToggle(!isFavorite);
+        }
+      } else {
+        console.error('즐겨찾기 업데이트 실패:', response?.message);
+      }
+    } catch (error) {
+      console.error('즐겨찾기 업데이트 실패:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -47,6 +83,7 @@ const FavoriteButton = ({ movieId, onToggle }) => {
     <FavoriteButtonWrapper 
       onClick={handleClick}
       isFavorite={isFavorite}
+      disabled={isLoading}
       aria-label={isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
     >
       <svg viewBox="0 0 24 24">
