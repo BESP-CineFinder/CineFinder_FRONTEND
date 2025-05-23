@@ -262,7 +262,6 @@ export const getScreenSchedules = async (requestData) => {
 export const getFavoriteMovieList = async (userId) => {
   try {
     const response = await api.get(`/api/favorite/favorite-movie-list?userId=${userId}`);
-    console.log(response)
     return response.data;
   } catch (error) {
     console.error('Get favorite movie list error:', error);
@@ -274,7 +273,6 @@ export const getFavoriteMovieList = async (userId) => {
 export const updateFavorite = async (favoriteRequestDto) => {
   try {
     const response = await api.post('/api/favorite', favoriteRequestDto);
-    console.log(response)
     return response.data;
   } catch (error) {
     console.error('Update favorite error:', error);
@@ -286,7 +284,6 @@ export const updateFavorite = async (favoriteRequestDto) => {
 export const checkFavorite = async (userId, movieId) => {
   try {
     const response = await api.get(`/api/favorite?userId=${userId}&movieId=${movieId}`);
-    console.log(response)
     return response.data;
   } catch (error) {
     console.error('Check favorite error:', error);

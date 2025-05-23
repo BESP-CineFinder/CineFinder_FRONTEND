@@ -272,9 +272,6 @@ const TheaterSearchResultPage = () => {
                           <FavoriteButton 
                             userId={user.payload.userId} 
                             movieId={movie.id}
-                            onToggle={(isFavorite) => {
-                              console.log(`영화 ${movie.name}의 즐겨찾기 상태가 ${isFavorite ? '추가' : '제거'}되었습니다.`);
-                            }}
                           />
                         )}
                       </div>
