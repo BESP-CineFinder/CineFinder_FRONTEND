@@ -9,6 +9,16 @@ const cleanTitle = (title) => (title || '').replace(/!HS|!HE|\*/g, '').trim();
 // KMDB 예고편 URL을 임베딩 가능한 형식으로 변환
 const getEmbeddableVodUrl = (vodUrl) => {
   if (!vodUrl) return '';
+  
+  // 카카오TV URL 처리
+  if (vodUrl.includes('tv.kakao.com')) {
+    // URL에서 cliplink ID 추출
+    const clipId = vodUrl.split('cliplink/')[1];
+    if (clipId) {
+      return `https://play-tv.kakao.com/embed/player/cliplink/${clipId}?service=player_share&autoplay=0&width=640&height=360`;
+    }
+  }
+  
   return vodUrl;
 };
 
@@ -97,33 +107,52 @@ const MovieDetailPage = () => {
         <div className="backdrop-overlay">
           <div className="movie-info">
             <div className="movie-poster">
-              <img src={movie.posters} alt={cleanTitle(movie.title)} />
+              <img 
+                src={movie.posters || '/images/default-poster.jpg'} 
+                alt={cleanTitle(movie.title)} 
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/images/default-poster.jpg';
+                }}
+              />
             </div>
             <div className="movie-details">
-              <h1 className="movie-title">{cleanTitle(movie.title)}</h1>
+              <h1 className="movie-title">{cleanTitle(movie.title) || '제목 정보 없음'}</h1>
               {movie.titleEng && <h2 className="movie-original-title">{movie.titleEng}</h2>}
               
               <div className="movie-meta">
-                {movie.nation && <span>{movie.nation}</span>}
-                {movie.genre && <span>{movie.genre}</span>}
-                {movie.runtime && <span>{movie.runtime}분</span>}
-                {movie.ratingGrade && <span>{movie.ratingGrade}</span>}
+                {movie.nation ? <span>{movie.nation}</span> : <span>국가 정보 없음</span>}
+                {movie.genre ? <span>{movie.genre}</span> : <span>장르 정보 없음</span>}
+                {movie.runtime ? <span>{movie.runtime}분</span> : <span>상영시간 정보 없음</span>}
+                {movie.ratingGrade ? <span>{movie.ratingGrade}</span> : <span>등급 정보 없음</span>}
                 {movie.rank && <span>박스오피스 {movie.rank}위</span>}
               </div>
 
               <div className="movie-plot">
                 <h3>줄거리</h3>
-                <p>{movie.plotText}</p>
+                <p>{movie.plotText || '아직 줄거리 정보가 준비되지 않았습니다. 최신 개봉 영화의 경우 정보 업데이트에 시간이 걸릴 수 있습니다.'}</p>
               </div>
 
               <div className="movie-cast">
                 <div className="directors">
                   <h3>감독</h3>
-                  <p>{Array.isArray(movie.directors) ? movie.directors.join(', ') : movie.directors}</p>
+                  <p>
+                    {Array.isArray(movie.directors) && movie.directors.length > 0
+                      ? movie.directors.join(', ')
+                      : typeof movie.directors === 'string'
+                        ? movie.directors.split('|').map(d => d.trim()).join(', ')
+                        : '감독 정보 없음'}
+                  </p>
                 </div>
                 <div className="actors">
                   <h3>출연</h3>
-                  <p>{Array.isArray(movie.actors) ? movie.actors.join(', ') : movie.actors}</p>
+                  <p>
+                    {Array.isArray(movie.actors) && movie.actors.length > 0
+                      ? movie.actors.join(', ')
+                      : typeof movie.actors === 'string'
+                        ? movie.actors.split('|').map(a => a.trim()).join(', ')
+                        : '출연 정보 없음'}
+                  </p>
                 </div>
               </div>
 

@@ -463,7 +463,7 @@ const ChatRoom = () => {
                       {msg.nickName}
                     </SenderName>
                     <Message isMine={isMine}>
-                      {msg.message}
+                      {msg.filteredMessage}
                     </Message>
                   </MessageContainer>
                 );

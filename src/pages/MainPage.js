@@ -35,8 +35,8 @@ const MainPage = () => {
           posters: movie.movieDetails?.posters ? movie.movieDetails.posters.split('|')[0] : '',
           stlls: movie.movieDetails?.stlls ? movie.movieDetails.stlls.split('|') : [],
           vods: movie.movieDetails?.vods ? movie.movieDetails.vods.split('|') : [],
-          directors: movie.movieDetails?.directors ? movie.movieDetails.directors.split(',') : [],
-          actors: movie.movieDetails?.actors ? movie.movieDetails.actors.split(',') : []
+          directors: movie.movieDetails?.directors ? movie.movieDetails.directors.split('|') : [],
+          actors: movie.movieDetails?.actors ? movie.movieDetails.actors.split('|') : []
         }
       }));
 

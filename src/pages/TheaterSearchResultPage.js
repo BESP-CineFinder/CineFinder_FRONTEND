@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getMovieDetails, getScreenSchedules } from '../api/api';
+import { getMovieDetails, getScreenSchedules, checkFavorite } from '../api/api';
 import { useQuery } from '@tanstack/react-query';
 import '../utils/css/TheaterSearchResultPage.css';
 import FilterButton from '../components/Button/Filter';
 import FavoriteButton from '../components/Button/FavoriteButton';
 import { AuthContext } from '../utils/auth/contexts/AuthProvider';
+import SearchLoader from '../components/Loader/SearchLoader';
 
 // HTML 엔티티를 디코딩하는 함수
 const decodeHtmlEntities = (text) => {
@@ -42,6 +43,7 @@ const TheaterSearchResultPage = () => {
   const [selectedChains, setSelectedChains] = useState(CHAIN_LIST.map(c => c.name));
   const [filterOpen, setFilterOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [favoriteStatus, setFavoriteStatus] = useState({});
   const filterRef = useRef(null);
   const { user } = useContext(AuthContext);
 
@@ -105,6 +107,38 @@ const TheaterSearchResultPage = () => {
     retry: 1, // 실패 시 1번만 재시도
   });
 
+  // 즐겨찾기 상태 가져오기
+  useEffect(() => {
+    const fetchFavoriteStatus = async () => {
+      if (!user || !searchResults) return;
+      
+      try {
+        const movieIds = searchResults.map(movie => movie.id);
+        const response = await checkFavorite(user.payload.userId, movieIds);
+        if (response && response.success) {
+          // 응답을 { movieId: favorite } 형태의 객체로 변환
+          const statusMap = response.payload.reduce((acc, item) => {
+            acc[item.movieId] = item.favorite;
+            return acc;
+          }, {});
+          setFavoriteStatus(statusMap);
+        }
+      } catch (error) {
+        console.error('즐겨찾기 상태 확인 실패:', error);
+      }
+    };
+
+    fetchFavoriteStatus();
+  }, [user, searchResults]);
+
+  // 즐겨찾기 상태 업데이트 핸들러
+  const handleFavoriteToggle = (movieId, newStatus) => {
+    setFavoriteStatus(prev => ({
+      ...prev,
+      [movieId]: newStatus
+    }));
+  };
+
   const handleChainFilter = (chain) => {
     setSelectedChains((prev) =>
       prev.includes(chain)
@@ -115,39 +149,71 @@ const TheaterSearchResultPage = () => {
 
   const handleTheaterSelect = (theater, screening, chain) => {
     // 상영일자 형식 변환
-    const formatDate = (date, format) => {
-      const d = new Date(date);
-      if (format === 'CGV' || format === '메가박스') {
-        return d.getFullYear() + 
-               String(d.getMonth() + 1).padStart(2, '0') + 
-               String(d.getDate()).padStart(2, '0');
-      } else if (format === '롯데시네마') {
-        return d.getFullYear() + '-' + 
-               String(d.getMonth() + 1).padStart(2, '0') + '-' + 
-               String(d.getDate()).padStart(2, '0');
+    const formatDate = (format) => {
+      try {
+        // TheaterSearchPage에서 전달받은 날짜 사용
+        const searchDate = searchParams.date;
+        const [year, month, day] = searchDate.split('-');
+
+        switch(format) {
+          case 'CGV':
+          case '메가박스':
+            return `${year}${month}${day}`;
+          case '롯데시네마':
+            return `${year}-${month}-${day}`;
+          default:
+            console.error('Unknown chain format:', format);
+            return '';
+        }
+      } catch (error) {
+        console.error('Date formatting error:', error);
+        return '';
       }
-      return date;
     };
 
     let url = '';
-    const playDate = formatDate(screening.date, chain);
+    const playDate = formatDate(chain);
     
-    switch(chain) {
-      case 'CGV':
-        url = `https://m.cgv.co.kr/WebApp/Reservation/QuickResult.aspx?ymd=${playDate}&mgc=${screening.multiplexMovieCode}&tc=${theater.code}&rt=MOVIE`;
-        break;
-      case '메가박스':
-        url = `https://www.megabox.co.kr/booking?movieNo=${screening.multiplexMovieCode}&brchNo1=${theater.code}&playDe=${playDate}`;
-        break;
-      case '롯데시네마':
-        url = `https://www.lottecinema.co.kr/NLCHS/Ticketing?releaseDate=${playDate}&screenCd=1|1|${theater.code}&screenName=screen&movieCd=${screening.multiplexMovieCode}&movieName=movie`;
-        break;
-      default:
-        console.error('알 수 없는 영화관 체인:', chain);
-        return;
+    if (!playDate) {
+      console.error('Invalid play date');
+      return;
     }
-    
-    window.open(url, '_blank');
+
+    if (!screening.multiplexMovieCode || !theater.code) {
+      console.error('Missing required parameters:', { 
+        multiplexMovieCode: screening.multiplexMovieCode, 
+        theaterCode: theater.code 
+      });
+      return;
+    }
+
+    try {
+      switch(chain) {
+        case 'CGV':
+          url = `https://m.cgv.co.kr/WebApp/Reservation/QuickResult.aspx?ymd=${playDate}&mgc=${screening.multiplexMovieCode}&tc=${theater.code}&rt=MOVIE`;
+          break;
+        case '메가박스':
+          url = `https://www.megabox.co.kr/booking?movieNo=${screening.multiplexMovieCode}&brchNo1=${theater.code}&playDe=${playDate}`;
+          break;
+        case '롯데시네마':
+          url = `https://www.lottecinema.co.kr/NLCHS/Ticketing?releaseDate=${playDate}&screenCd=1|1|${theater.code}&screenName=screen&movieCd=${screening.multiplexMovieCode}&movieName=movie`;
+          break;
+        default:
+          console.error('알 수 없는 영화관 체인:', chain);
+          return;
+      }
+
+      // URL 유효성 검사
+      if (!url || url.includes('undefined') || url.includes('NaN')) {
+        console.error('Invalid URL generated:', url);
+        return;
+      }
+      console.log(url);
+
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('URL generation error:', error);
+    }
   };
 
   const handlePosterClick = async (movie) => {
@@ -161,8 +227,8 @@ const TheaterSearchResultPage = () => {
         title: movie.name,
         posters: details.posters ? details.posters.split('|')[0] : '',
         stlls: details.stlls ? details.stlls.split('|') : [],
-        directors: details.directors ? details.directors.split(',') : [],
-        actors: details.actors ? details.actors.split(',') : [],
+        directors: details.directors ? details.directors.split('|') : [],
+        actors: details.actors ? details.actors.split('|') : [],
         vods: details.vods ? details.vods.split('|') : []
       };
 
@@ -196,11 +262,37 @@ const TheaterSearchResultPage = () => {
 
   if (isLoading) {
     return (
-      <div className="theater-search-result-container">
-        <div className="result-box">
-          <h1>검색 결과</h1>
-          <div className="theater-list">
-            <div className="tsr-loading">검색 결과를 불러오는 중...</div>
+      <div className="theater-search-result-container" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        width: '100%'
+      }}>
+        <div className="result-box" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%'
+        }}>
+          <div className="theater-list" style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            minHeight: '600px',
+            width: '100%',
+            gap: '20px'
+          }}>
+            <SearchLoader />
+            <h3 style={{
+              color: '#4f29f0',
+              fontSize: '1.2rem',
+              fontWeight: '500',
+              fontFamily: 'B_Pro',
+              margin: '40px auto',
+              textAlign: 'center'
+            }}>가까운 영화관에 찾아가는 중입니다...</h3>
           </div>
         </div>
       </div>
@@ -214,6 +306,51 @@ const TheaterSearchResultPage = () => {
           <h1>검색 결과</h1>
           <div className="theater-list">
             <div className="tsr-error">{error.message}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!searchResults || searchResults.length === 0) {
+    return (
+      <div className="theater-search-result-container" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        width: '100%'
+      }}>
+        <div className="result-box" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%'
+        }}>
+          <div className="theater-list" style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            minHeight: '600px',
+            width: '100%',
+            gap: '20px'
+          }}>
+            <h3 style={{
+              color: '#4f29f0',
+              fontSize: '1.2rem',
+              fontWeight: '500',
+              fontFamily: 'B_Pro',
+              margin: '40px auto',
+              textAlign: 'center'
+            }}>주변에 상영 중인 영화관이 없습니다.</h3>
+            <p style={{
+              color: '#666',
+              fontSize: '1rem',
+              fontFamily: 'B_Pro',
+              textAlign: 'center',
+              margin: '0 auto'
+            }}>다른 날짜나 시간으로 다시 검색해보세요.</p>
           </div>
         </div>
       </div>
@@ -272,6 +409,8 @@ const TheaterSearchResultPage = () => {
                           <FavoriteButton 
                             userId={user.payload.userId} 
                             movieId={movie.id}
+                            isFavorite={favoriteStatus[movie.id] || false}
+                            onToggle={(newStatus) => handleFavoriteToggle(movie.id, newStatus)}
                           />
                         )}
                       </div>

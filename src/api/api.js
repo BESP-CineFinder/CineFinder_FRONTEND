@@ -261,7 +261,7 @@ export const getScreenSchedules = async (requestData) => {
 // 즐겨찾기 영화 목록 조회
 export const getFavoriteMovieList = async (userId) => {
   try {
-    const response = await api.get(`/api/favorite/favorite-movie-list?userId=${userId}`);
+    const response = await api.get(`/api/favorite/movie-list?userId=${userId}`);
     return response.data;
   } catch (error) {
     console.error('Get favorite movie list error:', error);
@@ -281,9 +281,13 @@ export const updateFavorite = async (favoriteRequestDto) => {
 };
 
 // 즐겨찾기 여부 확인
-export const checkFavorite = async (userId, movieId) => {
+export const checkFavorite = async (userId, movieIds) => {
   try {
-    const response = await api.get(`/api/favorite?userId=${userId}&movieId=${movieId}`);
+    // URL 파라미터를 직접 구성
+    const movieIdParam = movieIds.join('&');
+    const url = `/api/favorite?userId=${userId}&movieId=${movieIdParam}`;
+    
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     console.error('Check favorite error:', error);

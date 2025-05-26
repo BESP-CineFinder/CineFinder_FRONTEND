@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { isFavoriteMovie, updateFavoriteMovie } from '../../utils/favoriteUtils';
+import { updateFavoriteMovie } from '../../utils/favoriteUtils';
 
 const FavoriteButtonWrapper = styled.button`
   position: absolute;
@@ -35,26 +35,8 @@ const FavoriteButtonWrapper = styled.button`
   }
 `;
 
-const FavoriteButton = ({ userId, movieId, onToggle }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+const FavoriteButton = ({ userId, movieId, isFavorite, onToggle }) => {
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const checkFavoriteStatus = async () => {
-      if (!userId || !movieId) return;
-      
-      try {
-        const response = await isFavoriteMovie(userId, movieId);
-        if (response && response.success) {
-          setIsFavorite(response.payload);
-        }
-      } catch (error) {
-        console.error('즐겨찾기 상태 확인 실패:', error);
-      }
-    };
-    
-    checkFavoriteStatus();
-  }, [userId, movieId]);
 
   const handleClick = async (e) => {
     e.preventDefault();
@@ -65,10 +47,7 @@ const FavoriteButton = ({ userId, movieId, onToggle }) => {
     try {
       const response = await updateFavoriteMovie(userId, movieId);
       if (response && response.success) {
-        setIsFavorite(!isFavorite);
-        if (onToggle) {
-          onToggle(!isFavorite);
-        }
+        onToggle(!isFavorite);
       } else {
         console.error('즐겨찾기 업데이트 실패:', response?.message);
       }

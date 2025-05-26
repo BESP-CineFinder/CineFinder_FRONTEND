@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getFavoriteMovies } from '../utils/favoriteUtils';
+import { getFavoriteMovieList } from '../api/api';
 import styled from 'styled-components';
 import BallLoader from '../components/Loader/BallLoader';
 import { AuthContext } from '../utils/auth/contexts/AuthProvider';
@@ -75,7 +75,7 @@ const MovieCard = styled.div`
   background-color: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-  padding: 0.4rem 0.4rem 0.6rem 0.8rem;
+  padding: 0.4rem 0.4rem 0.6rem 0.4rem;
   transition: all 0.3s cubic-bezier(.4,2,.3,1);
   position: relative;
   overflow: hidden;
@@ -181,8 +181,12 @@ const MyPage = () => {
       
       try {
         setLoading(true);
-        const movies = await getFavoriteMovies(user.payload.userId);
-        setFavoriteMovies(movies);
+        const response = await getFavoriteMovieList(user.payload.userId);
+        if (response && response.success) {
+          setFavoriteMovies(response.payload);
+        } else {
+          throw new Error('즐겨찾기 영화 목록을 불러오는데 실패했습니다.');
+        }
       } catch (err) {
         setError('즐겨찾기 영화 목록을 불러오는데 실패했습니다.');
         console.error(err);
@@ -193,6 +197,27 @@ const MyPage = () => {
 
     fetchFavoriteMovies();
   }, [user]);
+
+  const handleMovieClick = (movie) => {
+    const movieData = {
+      ...movie.movieDetails,
+      movieId: movie.movieId,
+      movieKey: movie.movieDetails.movieKey,
+      movieNm: movie.title,
+      title: movie.title,
+      posters: movie.movieDetails.posters ? movie.movieDetails.posters.split('|')[0] : movie.poster,
+      stlls: movie.movieDetails.stlls ? movie.movieDetails.stlls.split('|') : [],
+      directors: movie.movieDetails.directors ? movie.movieDetails.directors.split('|') : [],
+      actors: movie.movieDetails.actors ? movie.movieDetails.actors.split('|') : [],
+      vods: movie.movieDetails.vods ? movie.movieDetails.vods.split('|') : []
+    };
+
+    navigate(`/movie/${movie.movieId}`, {
+      state: {
+        movieData
+      }
+    });
+  };
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -244,18 +269,6 @@ const MyPage = () => {
         behavior: 'smooth'
       });
     }
-  };
-
-  const handleMovieClick = (movie) => {
-    navigate(`/movie/${movie.movieId}`, {
-      state: {
-        movieData: {
-          movieId: movie.movieId,
-          title: movie.title,
-          posters: movie.poster
-        }
-      }
-    });
   };
 
   if (!user) {
