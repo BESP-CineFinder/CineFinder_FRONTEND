@@ -5,19 +5,44 @@ import SockJS from 'sockjs-client';
 import styled from 'styled-components';
 import { AuthContext } from '../../utils/auth/contexts/AuthProvider';
 import Toast from '../common/Toast';
+import { getChatHistory } from '../../api/api';
 
 const ChatContainer = styled.div`
-  display: flex;
-  height: calc(100vh - 64px);
-  max-width: 1200px;
-  margin: 0 auto;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background: #1a1a1a;
   margin-top: 64px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  overflow: hidden;
+  z-index: 0;
+  font-family: 'Pretendard', sans-serif;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 80px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  &::before {
+    left: 0;
+    background: linear-gradient(to right, #1a1a1a 80%, transparent 100%);
+  }
+  &::after {
+    right: 0;
+    background: linear-gradient(to left, #1a1a1a 80%, transparent 100%);
+  }
+`;
+
+const ChatContent = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  position: relative;
+  z-index: 1;
 `;
 
 const ChatSidebar = styled.div`
@@ -192,7 +217,8 @@ const ChatMessages = styled.div`
   padding: 20px;
   background: #2a2a2a;
   border-radius: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 5px;
+  max-height: 72vh;
   display: flex;
   flex-direction: column;
   &::-webkit-scrollbar {
@@ -219,6 +245,7 @@ const SystemMessage = styled.div`
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   font-style: italic;
+  font-family: 'Pretendard', sans-serif;
 `;
 
 const MessageInput = styled.div`
@@ -275,6 +302,7 @@ const SenderName = styled.span`
   align-self: ${props => props.isMine ? 'flex-end' : 'flex-start'};
   width: 100%;
   text-align: ${props => props.isMine ? 'right' : 'left'};
+  font-family: 'Pretendard', sans-serif;
 `;
 
 const Message = styled.div`
@@ -286,6 +314,7 @@ const Message = styled.div`
   max-width: 100%;
   word-break: break-word;
   text-align: ${props => props.isMine ? 'flex-end' : 'flex-start'};
+  font-family: 'Pretendard', sans-serif;
 `;
 
 const ChatRoom = () => {
@@ -301,7 +330,12 @@ const ChatRoom = () => {
   const [participants, setParticipants] = useState(new Set());
   const [toast, setToast] = useState({ show: false, message: '' });
   const messagesEndRef = useRef(null);
+  const chatMessagesRef = useRef(null);
+  const lastMessageRef = useRef(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
   const { user } = useContext(AuthContext);
+  const oldestTimestampRef = useRef(null);
 
   const showToast = (message) => {
     setToast({ show: true, message });
@@ -316,6 +350,51 @@ const ChatRoom = () => {
       stompClient.deactivate();
     }
     navigate(-1);
+  };
+
+  const loadChatHistory = async (cursorCreatedAt = null) => {
+    if (!movieId || isLoadingHistory || !hasMoreHistory) return;
+
+    setIsLoadingHistory(true);
+    try {
+      const prevScrollHeight = chatMessagesRef.current ? chatMessagesRef.current.scrollHeight : 0;
+      const history = await getChatHistory(movieId, cursorCreatedAt);
+      
+      if (history.length === 0) {
+        setHasMoreHistory(false);
+        return;
+      }
+
+      setMessages(prev => {
+        const newMessages = [...history, ...prev];
+        if (newMessages.length > 0) {
+          oldestTimestampRef.current = newMessages[0].timestamp;
+        }
+        return newMessages;
+      });
+
+      if (chatMessagesRef.current && cursorCreatedAt) {
+        setTimeout(() => {
+          const newScrollHeight = chatMessagesRef.current.scrollHeight;
+          chatMessagesRef.current.scrollTop = newScrollHeight - prevScrollHeight;
+        }, 0);
+      }
+    } catch (error) {
+      console.error('채팅 히스토리 로드 실패:', error);
+      showToast('채팅 기록을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const handleScroll = () => {
+    if (!chatMessagesRef.current) return;
+    const { scrollTop } = chatMessagesRef.current;
+    if (scrollTop === 0 && hasMoreHistory && !isLoadingHistory) {
+      if (oldestTimestampRef.current) {
+        loadChatHistory(oldestTimestampRef.current);
+      }
+    }
   };
 
   useEffect(() => {
@@ -335,15 +414,11 @@ const ChatRoom = () => {
     const client = new Client({
       webSocketFactory: () => socket,
       onConnect: () => {
-        console.log('Connected to WebSocket');
         setIsConnected(true);
-        
+
         client.subscribe(`/topic/chat-${movieId}`, (message) => {
           const newMessage = JSON.parse(message.body);
-          
-          if (newMessage.type === 'SYSTEM') {
-            setMessages(prev => [...prev, newMessage]);
-          } else if (newMessage.type === 'CHAT') {
+          if (newMessage.type === 'SYSTEM' || newMessage.type === 'CHAT') {
             setMessages(prev => [...prev, newMessage]);
           } else if (Array.isArray(newMessage)) {
             setParticipants(new Set(newMessage));
@@ -357,18 +432,13 @@ const ChatRoom = () => {
           nickName: user.payload.nickname,
           timestamp: new Date().toISOString()
         };
-
         client.publish({
           destination: `/app/chat-${movieId}/join`,
           body: JSON.stringify(joinMessage)
         });
       },
-      onDisconnect: () => {
-        console.log('Disconnected from WebSocket');
-        setIsConnected(false);
-      },
+      onDisconnect: () => setIsConnected(false),
       onStompError: (frame) => {
-        console.error('STOMP error:', frame);
         setIsConnected(false);
         handleLeave();
       }
@@ -378,19 +448,43 @@ const ChatRoom = () => {
     setStompClient(client);
 
     return () => {
-      if (client) {
-        client.deactivate();
-      }
+      client.deactivate();
     };
-  }, [movieId, user, navigate]);
+  }, [movieId, user]);
+
+  useEffect(() => {
+    if (movieId && user) {
+      setMessages([]);
+      loadChatHistory();
+    }
+    // eslint-disable-next-line
+  }, [movieId, user]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      oldestTimestampRef.current = messages[0].timestamp;
+    }
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    console.log(messages);
+    console.log(user);
+    if (!messages || messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+    // 내가 보낸 메시지일 때만 스크롤
+    console.log(lastMsg);
+    if (
+      lastMessageRef.current !== lastMsg.timestamp &&
+      String(lastMsg.senderId) === String(user?.payload?.userId)
+    ) {
+      scrollToBottom();
+    }
+    lastMessageRef.current = lastMsg.timestamp;
+  }, [messages, user]);
 
   const handleSendMessage = () => {
     if (!message.trim() || !stompClient || !isConnected || !user || !movieId) {
@@ -426,89 +520,99 @@ const ChatRoom = () => {
 
   return (
     <ChatContainer>
-      <ChatSidebar>
-        <ParticipantsList>
-          <ParticipantsTitle>
-            참여자 목록
-            <ParticipantsCount>
-              {participants.size}명 참여 중
-            </ParticipantsCount>
-          </ParticipantsTitle>
-          {Array.from(participants).map((nickname, index) => (
-            <ParticipantItem key={index}>{nickname}</ParticipantItem>
-          ))}
-        </ParticipantsList>
-        <LeaveButton onClick={handleLeave}>채팅방 나가기</LeaveButton>
-      </ChatSidebar>
-      
-      <ChatMain>
-        {isLoading ? (
-          <div>메시지 로딩 중...</div>
-        ) : (
-          <>
-            <ChatMessages>
-              {messages.map((msg, index) => {
-                if (msg.type === 'SYSTEM') {
-                  return (
-                    <SystemMessage key={index}>
-                      {msg.message}
-                    </SystemMessage>
-                  );
-                }
-                
-                const isMine = String(msg.senderId) === String(user?.payload?.userId);
-                return (
-                  <MessageContainer key={index} isMine={isMine}>
-                    <SenderName isMine={isMine}>
-                      {msg.nickName}
-                    </SenderName>
-                    <Message isMine={isMine}>
-                      {msg.filteredMessage}
-                    </Message>
-                  </MessageContainer>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </ChatMessages>
-            <MessageInput>
-              <Input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={isConnected ? "메시지를 입력하세요..." : "연결 중..."}
-                disabled={!isConnected}
-              />
-              <SendButton 
-                onClick={handleSendMessage}
-                disabled={!isConnected}
-                style={{ opacity: isConnected ? 1 : 0.5 }}
+      <ChatContent>
+        <ChatSidebar>
+          <ParticipantsList>
+            <ParticipantsTitle>
+              참여자 목록
+              <ParticipantsCount>
+                {participants.size}명 참여 중
+              </ParticipantsCount>
+            </ParticipantsTitle>
+            {Array.from(participants).map((nickname, index) => (
+              <ParticipantItem key={index}>{nickname}</ParticipantItem>
+            ))}
+          </ParticipantsList>
+          <LeaveButton onClick={handleLeave}>채팅방 나가기</LeaveButton>
+        </ChatSidebar>
+        
+        <ChatMain>
+          {isLoading ? (
+            <div>메시지 로딩 중...</div>
+          ) : (
+            <>
+              <ChatMessages 
+                ref={chatMessagesRef}
+                onScroll={handleScroll}
               >
-                전송
-              </SendButton>
-            </MessageInput>
-          </>
-        )}
-      </ChatMain>
+                {isLoadingHistory && (
+                  <SystemMessage>
+                    이전 메시지를 불러오는 중...
+                  </SystemMessage>
+                )}
+                {messages.map((msg, index) => {
+                  if (msg.type === 'SYSTEM') {
+                    return (
+                      <SystemMessage key={index}>
+                        {msg.message}
+                      </SystemMessage>
+                    );
+                  }
+                  
+                  const isMine = String(msg.senderId) === String(user?.payload?.userId);
+                  return (
+                    <MessageContainer key={index} isMine={isMine}>
+                      <SenderName isMine={isMine}>
+                        {msg.nickName}
+                      </SenderName>
+                      <Message isMine={isMine}>
+                        {msg.filteredMessage}
+                      </Message>
+                    </MessageContainer>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </ChatMessages>
+              
+              <MessageInput>
+                <Input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={isConnected ? "메시지를 입력하세요..." : "연결 중..."}
+                  disabled={!isConnected}
+                />
+                <SendButton 
+                  onClick={handleSendMessage}
+                  disabled={!isConnected}
+                  style={{ opacity: isConnected ? 1 : 0.5 }}
+                >
+                  전송
+                </SendButton>
+              </MessageInput>
+            </>
+          )}
+        </ChatMain>
 
-      <MovieInfoSidebar>
-        <MoviePoster 
-          src={movieInfo?.posterUrl || 'https://via.placeholder.com/300x450'} 
-          alt={movieInfo?.movieNm || '영화 포스터'}
-        />
-        <MovieInfo>
-          <MovieTitle>{movieInfo?.movieNm || '영화 제목'}</MovieTitle>
-          <MovieDescription>
-            {movieInfo?.plotText || '영화 설명이 없습니다.'}
-          </MovieDescription>
-          <MovieDetails>
-            <DetailItem>개봉일: {movieInfo?.releaseDate || '정보 없음'}</DetailItem>
-            <DetailItem>장르: {movieInfo?.genre || '정보 없음'}</DetailItem>
-            <DetailItem>감독: {movieInfo?.directors || '정보 없음'}</DetailItem>
-            <DetailItem>배우: {movieInfo?.actors || '정보 없음'}</DetailItem>
-          </MovieDetails>
-        </MovieInfo>
-      </MovieInfoSidebar>
-
+        <MovieInfoSidebar>
+          <MoviePoster 
+            src={movieInfo?.posterUrl || 'https://via.placeholder.com/300x450'} 
+            alt={movieInfo?.movieNm || '영화 포스터'}
+          />
+          <MovieInfo>
+            <MovieTitle>{movieInfo?.movieNm || '영화 제목'}</MovieTitle>
+            <MovieDescription>
+              {movieInfo?.plotText || '영화 설명이 없습니다.'}
+            </MovieDescription>
+            <MovieDetails>
+              <DetailItem>개봉일: {movieInfo?.releaseDate || '정보 없음'}</DetailItem>
+              <DetailItem>장르: {movieInfo?.genre || '정보 없음'}</DetailItem>
+              <DetailItem>감독: {movieInfo?.directors || '정보 없음'}</DetailItem>
+              <DetailItem>배우: {movieInfo?.actors || '정보 없음'}</DetailItem>
+            </MovieDetails>
+          </MovieInfo>
+        </MovieInfoSidebar>
+      </ChatContent>
       <Toast 
         message={toast.message}
         isVisible={toast.show}

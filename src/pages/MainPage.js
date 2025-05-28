@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
 import { useNavigate } from 'react-router-dom';
 import { getDailyBoxOffice } from '../api/api';
+import { AuthContext } from '../utils/auth/contexts/AuthProvider';
+import FavoriteButton from '../components/Button/FavoriteButton';
 
 const MainPage = () => {
+  const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const sliderRef = useRef(null);
@@ -123,6 +126,16 @@ const MainPage = () => {
   // 영화 제목에서 #숫자 제거 함수
   const cleanCardTitle = (title) => (title || '').replace(/#\d+$/, '').trim();
 
+  const handleFavoriteToggle = (movieId, newStatus) => {
+    setBoxOfficeMovies(prev => 
+      prev.map(movie => 
+        movie.movieId === movieId 
+          ? { ...movie, isFavorite: newStatus }
+          : movie
+      )
+    );
+  };
+
   return (
     <div className="main-container">
 
@@ -191,11 +204,15 @@ const MainPage = () => {
                           예매하기
                         </button>
                       </div>
+                      {user && (
+                        <FavoriteButton 
+                          userId={user.payload.userId}
+                          movieId={movie.movieId}
+                          isFavorite={movie.isFavorite || false}
+                          onToggle={(newStatus) => handleFavoriteToggle(movie.movieId, newStatus)}
+                        />
+                      )}
                     </div>
-                    <h3 className="movie-title">
-                      {cleanCardTitle(movie.movieNm)}
-                    </h3>
-                    <div className="movie-rank">순위: {movie.rank}위</div>
                   </div>
                 ))}
               </div>

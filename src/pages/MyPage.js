@@ -4,6 +4,7 @@ import { getFavoriteMovieList } from '../api/api';
 import styled from 'styled-components';
 import BallLoader from '../components/Loader/BallLoader';
 import { AuthContext } from '../utils/auth/contexts/AuthProvider';
+import FavoriteButton from '../components/Button/FavoriteButton';
 
 const MyPageContainer = styled.div`
   max-width: 1200px;
@@ -321,6 +322,14 @@ const MyPage = () => {
                     }}
                   />
                   <MovieTitle>{movie.title}</MovieTitle>
+                  <FavoriteButton 
+                    userId={user.payload.userId}
+                    movieId={movie.movieId}
+                    isFavorite={true}
+                    onToggle={() => {
+                      setFavoriteMovies(prev => prev.filter(m => m.movieId !== movie.movieId));
+                    }}
+                  />
                 </MovieCard>
               ))}
             </MovieSlider>

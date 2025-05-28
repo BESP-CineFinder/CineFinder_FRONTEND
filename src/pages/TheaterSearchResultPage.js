@@ -36,6 +36,8 @@ const CHAIN_LIST = [
   { name: '메가박스', color: 'linear-gradient(90deg, #4a1e8f 60%, #6c2eb7 100%)' },
 ];
 
+const DEFAULT_POSTER = '/assets/images/default-poster.png';
+
 const TheaterSearchResultPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -403,7 +405,12 @@ const TheaterSearchResultPage = () => {
                   return (
                     <div key={movie.id} className="tsr-movie-card">
                       <div className="tsr-movie-poster-area" onClick={() => handlePosterClick(movie)} style={{ cursor: 'pointer' }}>
-                        <img src={movie.poster} alt={movie.name} className="tsr-movie-poster-large" />
+                        <img 
+                          src={movie.poster ? movie.poster : DEFAULT_POSTER} 
+                          alt={movie.name} 
+                          className="tsr-movie-poster-large" 
+                          onError={e => { e.target.src = DEFAULT_POSTER; }}
+                        />
                         <div className="tsr-movie-title">{movie.name}</div>
                         {user && (
                           <FavoriteButton 
