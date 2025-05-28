@@ -227,7 +227,7 @@ const TheaterSearchResultPage = () => {
         movieKey: movie.id,
         movieNm: movie.name,
         title: movie.name,
-        posters: details.posters ? details.posters.split('|')[0] : '',
+        posters: details.posters ? details.posters.split('|')[0] : movie.poster,
         stlls: details.stlls ? details.stlls.split('|') : [],
         directors: details.directors ? details.directors.split('|') : [],
         actors: details.actors ? details.actors.split('|') : [],
