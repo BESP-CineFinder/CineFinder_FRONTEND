@@ -58,7 +58,6 @@ const ButtonContainer = styled.div`
 `;
 
 const MovieDetailPage = () => {
-  const { movieKey } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const movie = location.state?.movieData;
@@ -99,6 +98,23 @@ const MovieDetailPage = () => {
         }
       }
     });
+  };
+
+  const handleReserve = async () => {
+    const now = new Date();
+    const hour = now.getHours().toString().padStart(2, '0');
+    const minute = now.getMinutes().toString().padStart(2, '0');
+    const startTime = `${hour}:${minute}`;
+    const endTime = '23:59';
+
+    const searchParams = {
+      date: now.toISOString().slice(0, 10),
+      minTime: startTime,
+      maxTime: endTime,
+      distance: 3,
+      movieIds: [movie.movieId]
+    };
+    navigate('/theater-search-result', { state: searchParams });
   };
 
   return (
@@ -160,7 +176,7 @@ const MovieDetailPage = () => {
                 <ButtonContainer>
                   <ActionButton 
                     className="reserve-button"
-                    onClick={() => navigate(`/theater-search?movieId=${movie.movieId}`)}
+                    onClick={handleReserve}
                   >
                     예매하기
                   </ActionButton>

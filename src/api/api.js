@@ -328,4 +328,18 @@ export const getChatHistory = async (movieId, cursorCreatedAt = null) => {
   }
 };
 
+// 영화 키워드 검색 (제목 리스트 반환)
+export const searchMovies = async (keyword) => {
+  try {
+    const response = await api.get(`/api/movie/search?keyword=${encodeURIComponent(keyword)}`);
+    if (response.data && response.data.payload && Array.isArray(response.data.payload)) {
+      return response.data.payload;
+    }
+    return [];
+  } catch (error) {
+    console.error('영화 키워드 검색 실패:', error);
+    return [];
+  }
+};
+
 export default api;

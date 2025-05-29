@@ -3,9 +3,11 @@ import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
 import { useNavigate } from 'react-router-dom';
-import { getDailyBoxOffice } from '../api/api';
+import { getDailyBoxOffice, checkFavorite, updateFavorite } from '../api/api';
 import { AuthContext } from '../utils/auth/contexts/AuthProvider';
 import FavoriteButton from '../components/Button/FavoriteButton';
+
+const SEOUL_CITY_HALL = { lat: 37.566826, lng: 126.9786567 };
 
 const MainPage = () => {
   const { user } = useContext(AuthContext);
@@ -17,10 +19,33 @@ const MainPage = () => {
   const [scrollLeft, setScrollLeft] = useState(0);
   const navigate = useNavigate();
   const [boxOfficeMovies, setBoxOfficeMovies] = useState([]);
+  const [favoriteStatus, setFavoriteStatus] = useState({});
 
   useEffect(() => {
     fetchBoxOfficeMovies();
-  }, []);
+  }, [user]);
+
+  useEffect(() => {
+    const fetchFavoriteStatus = async () => {
+      if (!user || !boxOfficeMovies.length) return;
+      
+      try {
+        const movieIds = boxOfficeMovies.map(movie => movie.movieId);
+        const response = await checkFavorite(user.payload.userId, movieIds);
+        if (response && response.success) {
+          const statusMap = response.payload.reduce((acc, item) => {
+            acc[item.movieId] = item.favorite;
+            return acc;
+          }, {});
+          setFavoriteStatus(statusMap);
+        }
+      } catch (error) {
+        console.error('즐겨찾기 상태 확인 실패:', error);
+      }
+    };
+
+    fetchFavoriteStatus();
+  }, [user, boxOfficeMovies]);
 
   const fetchBoxOfficeMovies = async () => {
     try {
@@ -31,7 +56,7 @@ const MainPage = () => {
         throw new Error('박스오피스 데이터가 올바르지 않습니다.');
       }
 
-      const movies = response.payload.map(movie => ({
+      let movies = response.payload.map(movie => ({
         ...movie,
         movieDetails: {
           ...movie.movieDetails,
@@ -123,17 +148,35 @@ const MainPage = () => {
     });
   };
 
-  // 영화 제목에서 #숫자 제거 함수
-  const cleanCardTitle = (title) => (title || '').replace(/#\d+$/, '').trim();
+  const handleFavoriteToggle = async (movieId, newStatus) => {
+    if (!user) return;
+    try {
+      await updateFavorite({ userId: user.payload.userId, movieId });
+      setFavoriteStatus(prev => ({
+        ...prev,
+        [movieId]: newStatus
+      }));
+    } catch (err) {
+      alert('즐겨찾기 변경에 실패했습니다.');
+    }
+  };
 
-  const handleFavoriteToggle = (movieId, newStatus) => {
-    setBoxOfficeMovies(prev => 
-      prev.map(movie => 
-        movie.movieId === movieId 
-          ? { ...movie, isFavorite: newStatus }
-          : movie
-      )
-    );
+  // 박스오피스 영화 예매하기 핸들러
+  const handleBoxOfficeReserve = (movieId) => {
+    const now = new Date();
+    const hour = now.getHours().toString().padStart(2, '0');
+    const minute = now.getMinutes().toString().padStart(2, '0');
+    const startTime = `${hour}:${minute}`;
+    const endTime = '23:59';
+    const searchParams = {
+      date: now.toISOString().slice(0, 10),
+      minTime: startTime,
+      maxTime: endTime,
+      distance: 3,
+      movieIds: [movieId]
+      // lat, lng 없음
+    };
+    navigate('/theater-search-result', { state: searchParams });
   };
 
   return (
@@ -199,7 +242,7 @@ const MainPage = () => {
                         </button>
                         <button 
                           className="movie-button theater-button"
-                          onClick={() => navigate(`/theater-search?movieId=${movie.movieId}`)}
+                          onClick={() => handleBoxOfficeReserve(movie.movieId)}
                         >
                           예매하기
                         </button>
@@ -208,7 +251,7 @@ const MainPage = () => {
                         <FavoriteButton 
                           userId={user.payload.userId}
                           movieId={movie.movieId}
-                          isFavorite={movie.isFavorite || false}
+                          isFavorite={favoriteStatus[movie.movieId] || false}
                           onToggle={(newStatus) => handleFavoriteToggle(movie.movieId, newStatus)}
                         />
                       )}

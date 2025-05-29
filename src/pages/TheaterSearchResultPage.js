@@ -38,6 +38,8 @@ const CHAIN_LIST = [
 
 const DEFAULT_POSTER = '/assets/images/default-poster.png';
 
+const SEOUL_CITY_HALL = { lat: 37.566826, lng: 126.9786567 };
+
 const TheaterSearchResultPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,6 +50,7 @@ const TheaterSearchResultPage = () => {
   const [favoriteStatus, setFavoriteStatus] = useState({});
   const filterRef = useRef(null);
   const { user } = useContext(AuthContext);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
     if (location.state) {
@@ -80,11 +83,10 @@ const TheaterSearchResultPage = () => {
     queryKey: ['screenSchedules', searchParams],
     queryFn: async () => {
       if (!searchParams) return null;
-      
       if (!searchParams.lat || !searchParams.lng) {
         throw new Error('위치 정보가 필요합니다.');
       }
-
+      
       const requestData = {
         lat: searchParams.lat.toString(),
         lng: searchParams.lng.toString(),
@@ -92,10 +94,12 @@ const TheaterSearchResultPage = () => {
         minTime: searchParams.minTime,
         maxTime: searchParams.maxTime,
         distance: searchParams.distance.toString(),
-        movieNames: []
+        movieNames: searchParams.movieNames ? searchParams.movieNames : []
       };
 
       const data = await getScreenSchedules(requestData);
+
+      console.log(data);
       
       if (!data || !Array.isArray(data)) {
         throw new Error('검색 결과를 불러오는데 실패했습니다.');
@@ -103,7 +107,7 @@ const TheaterSearchResultPage = () => {
 
       return data;
     },
-    enabled: !!searchParams,
+    enabled: !!searchParams && !!searchParams.lat && !!searchParams.lng,
     staleTime: 5 * 60 * 1000, // 5분 동안 캐시 유지
     cacheTime: 30 * 60 * 1000, // 30분 동안 캐시 저장
     retry: 1, // 실패 시 1번만 재시도
@@ -262,7 +266,42 @@ const TheaterSearchResultPage = () => {
     });
   };
 
-  if (isLoading) {
+  // lat/lng이 없으면 geolocation으로 받아오기
+  useEffect(() => {
+    if (!searchParams) return;
+    if (searchParams.lat && searchParams.lng) return;
+    setIsLocating(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setSearchParams({
+            ...searchParams,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          });
+          setIsLocating(false);
+        },
+        () => {
+          setSearchParams({
+            ...searchParams,
+            lat: SEOUL_CITY_HALL.lat,
+            lng: SEOUL_CITY_HALL.lng
+          });
+          setIsLocating(false);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      setSearchParams({
+        ...searchParams,
+        lat: SEOUL_CITY_HALL.lat,
+        lng: SEOUL_CITY_HALL.lng
+      });
+      setIsLocating(false);
+    }
+  }, [searchParams]);
+
+  if (isLoading || isLocating) {
     return (
       <div className="theater-search-result-container" style={{
         display: 'flex',
@@ -362,7 +401,14 @@ const TheaterSearchResultPage = () => {
   return (
     <div className="theater-search-result-container">
       <div className="result-box">
-        <h1>검색 결과</h1>
+        <div className="tsr-dynamic-title">
+          {searchParams && (
+            <>
+              <span className="tsr-time-range">{searchParams.minTime || '00:00'} ~ {searchParams.maxTime || '23:59'}</span>
+              <span className="tsr-title-desc"> 근처 영화관 상영 정보</span>
+            </>
+          )}
+        </div>
         <div className="tsr-chain-filter-bar">
           <span onClick={() => setFilterOpen((v) => !v)} aria-label="필터 열기" style={{display:'inline-flex', cursor:'pointer'}}>
             <FilterButton />
@@ -403,15 +449,14 @@ const TheaterSearchResultPage = () => {
                 .filter((movie) => Object.keys(movie.schedule).some(chain => selectedChains.includes(chain)))
                 .map((movie) => {
                   return (
-                    <div key={movie.id} className="tsr-movie-card">
-                      <div className="tsr-movie-poster-area" onClick={() => handlePosterClick(movie)} style={{ cursor: 'pointer' }}>
+                    <div key={movie.id} className="tsr-movie-card tsr-movie-card-large">
+                      <div className="tsr-movie-poster-area tsr-movie-poster-area-large" onClick={() => handlePosterClick(movie)} style={{ cursor: 'pointer' }}>
                         <img 
                           src={movie.poster ? movie.poster : DEFAULT_POSTER} 
                           alt={movie.name} 
-                          className="tsr-movie-poster-large" 
+                          className="tsr-movie-poster-large-img" 
                           onError={e => { e.target.src = DEFAULT_POSTER; }}
                         />
-                        <div className="tsr-movie-title">{movie.name}</div>
                         {user && (
                           <FavoriteButton 
                             userId={user.payload.userId} 
@@ -431,11 +476,11 @@ const TheaterSearchResultPage = () => {
                                 <div className={`tsr-theater-chain tsr-theater-chain-${chain === 'CGV' ? 'cgv' : chain === '메가박스' ? 'megabox' : 'lotte'}`}>{chain}</div>
                                 {Object.entries(grouped).map(([theaterName, types]) => (
                                   <div key={theaterName} className="tsr-theater-block">
-                                    <div className="tsr-theater-name-bar">{theaterName}</div>
+                                    <div className={`tsr-theater-name-bar tsr-theater-name-bar-${chain === 'CGV' ? 'cgv' : chain === '메가박스' ? 'megabox' : 'lotte'}`}>{theaterName}</div>
                                     {Object.entries(types).map(([type, screens]) => (
                                       Object.entries(screens).map(([screen, screenings]) => (
                                         <div key={type + screen} className="tsr-screen-block">
-                                          <div className="tsr-screen-bar">{type} {screen}</div>
+                                          <div className={`tsr-screen-bar tsr-screen-bar-${chain === 'CGV' ? 'cgv' : chain === '메가박스' ? 'megabox' : 'lotte'}`}>{type} {screen}</div>
                                           <div className="tsr-screening-list-cards">
                                             {screenings
                                               .sort((a, b) => {

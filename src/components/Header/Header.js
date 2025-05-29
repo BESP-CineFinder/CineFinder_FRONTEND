@@ -1,31 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { logout } from '../../api/api';
+import { logout, searchMovies } from '../../api/api';
 import { AuthContext } from '../../utils/auth/contexts/AuthProvider';
 import '../../utils/css/Header.css';
-
-const SEOUL_CITY_HALL = { lat: 37.566826, lng: 126.9786567 };
 
 const Header = () => {
     const { user, setUser } = useContext(AuthContext);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentLocation, setCurrentLocation] = useState(null);
-
-    useEffect(() => {
-        setLoading(false);
-        // 현재 위치 가져오기
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                () => setCurrentLocation(SEOUL_CITY_HALL),
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
-        } else {
-            setCurrentLocation(SEOUL_CITY_HALL);
-        }
-    }, []);
 
     const handleLogout = async () => {
         try {
@@ -41,28 +24,43 @@ const Header = () => {
         window.location.href = 'https://localhost/api/login/';
     };
 
-    const handleSearch = (e) => {
+    const handleSearch = async (e) => {
         e.preventDefault();
-        if (!currentLocation || !searchQuery.trim()) return;
+        if (!searchQuery.trim()) return;
 
-        // 현재 시간 기준으로 검색 시간 설정
+        // 1. 영화 제목 리스트 검색
+        let movieIds = [];
+        try {
+            movieIds = await searchMovies(searchQuery.trim());
+        } catch (err) {
+            alert('영화 검색에 실패했습니다.');
+            return;
+        }
+        if (!movieIds.length) {
+            alert('키워드에 부합하는 영화가 없습니다.');
+            return;
+        }
+
+        // 2. 현재 시간 기준으로 검색 시간 설정
         const now = new Date();
-        const currentHour = now.getHours();
-        const startTime = `${currentHour.toString().padStart(2, '0')}:00`;
+        const hour = now.getHours().toString().padStart(2, '0');
+        const minute = now.getMinutes().toString().padStart(2, '0');
+        const startTime = `${hour}:${minute}`;
         const endTime = '23:59';
 
         const searchParams = {
-            lat: currentLocation.lat,
-            lng: currentLocation.lng,
             date: now.toISOString().slice(0, 10),
             minTime: startTime,
             maxTime: endTime,
             distance: 3,
-            movieNames: [searchQuery.trim()]
+            movieIds: movieIds
         };
-
         navigate('/theater-search-result', { state: searchParams });
     };
+
+    useEffect(() => {
+        setLoading(false);
+    }, []);
 
     if (loading) {
         return null;

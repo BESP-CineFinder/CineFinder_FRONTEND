@@ -337,6 +337,10 @@ const ChatRoom = () => {
   const { user } = useContext(AuthContext);
   const oldestTimestampRef = useRef(null);
 
+  // 중복 요청 방지용 debounce
+  let lastHistoryRequest = 0;
+  const DEBOUNCE_MS = 700;
+
   const showToast = (message) => {
     setToast({ show: true, message });
   };
@@ -390,12 +394,57 @@ const ChatRoom = () => {
   const handleScroll = () => {
     if (!chatMessagesRef.current) return;
     const { scrollTop } = chatMessagesRef.current;
-    if (scrollTop === 0 && hasMoreHistory && !isLoadingHistory) {
+    const now = Date.now();
+    if (
+      scrollTop === 0 &&
+      hasMoreHistory &&
+      !isLoadingHistory &&
+      now - lastHistoryRequest > DEBOUNCE_MS
+    ) {
+      lastHistoryRequest = now;
       if (oldestTimestampRef.current) {
         loadChatHistory(oldestTimestampRef.current);
       }
     }
   };
+
+  // 모바일 Pull to Refresh (맨 위에서 아래로 드래그 시)
+  let startY = null;
+  let pulling = false;
+
+  const handleTouchStart = (e) => {
+    if (chatMessagesRef.current && chatMessagesRef.current.scrollTop === 0) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  };
+  const handleTouchMove = (e) => {
+    if (!pulling || startY === null) return;
+    const deltaY = e.touches[0].clientY - startY;
+    if (deltaY > 40 && hasMoreHistory && !isLoadingHistory) {
+      pulling = false; // 한 번만
+      if (oldestTimestampRef.current) {
+        loadChatHistory(oldestTimestampRef.current);
+      }
+    }
+  };
+  const handleTouchEnd = () => {
+    startY = null;
+    pulling = false;
+  };
+
+  useEffect(() => {
+    const ref = chatMessagesRef.current;
+    if (!ref) return;
+    ref.addEventListener('touchstart', handleTouchStart);
+    ref.addEventListener('touchmove', handleTouchMove);
+    ref.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      ref.removeEventListener('touchstart', handleTouchStart);
+      ref.removeEventListener('touchmove', handleTouchMove);
+      ref.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [hasMoreHistory, isLoadingHistory]);
 
   useEffect(() => {
     if (!user) {
@@ -457,34 +506,27 @@ const ChatRoom = () => {
       setMessages([]);
       loadChatHistory();
     }
-    // eslint-disable-next-line
   }, [movieId, user]);
 
+  // 메시지가 변경될 때마다 가장 오래된 메시지의 timestamp 업데이트
   useEffect(() => {
     if (messages.length > 0) {
       oldestTimestampRef.current = messages[0].timestamp;
     }
   }, [messages]);
 
+  // 내가 보낸 메시지일 때만 스크롤 다운
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+    if (String(lastMsg.senderId) === String(user?.payload?.userId)) {
+      scrollToBottom();
+    }
+  }, [messages, user]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  useEffect(() => {
-    console.log(messages);
-    console.log(user);
-    if (!messages || messages.length === 0) return;
-    const lastMsg = messages[messages.length - 1];
-    // 내가 보낸 메시지일 때만 스크롤
-    console.log(lastMsg);
-    if (
-      lastMessageRef.current !== lastMsg.timestamp &&
-      String(lastMsg.senderId) === String(user?.payload?.userId)
-    ) {
-      scrollToBottom();
-    }
-    lastMessageRef.current = lastMsg.timestamp;
-  }, [messages, user]);
 
   const handleSendMessage = () => {
     if (!message.trim() || !stompClient || !isConnected || !user || !movieId) {
