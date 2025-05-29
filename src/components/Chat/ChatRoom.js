@@ -246,6 +246,17 @@ const SystemMessage = styled.div`
   border-radius: 4px;
   font-style: italic;
   font-family: 'Pretendard', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+  }
 `;
 
 const MessageInput = styled.div`
@@ -313,8 +324,18 @@ const Message = styled.div`
   width: fit-content;
   max-width: 100%;
   word-break: break-word;
-  text-align: ${props => props.isMine ? 'flex-end' : 'flex-start'};
+  text-align: ${props => props.isMine ? 'right' : 'left'};
   font-family: 'Pretendard', sans-serif;
+  align-self: ${props => props.isMine ? 'flex-end' : 'flex-start'};
+`;
+
+const MessageTime = styled.span`
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 4px;
+  display: block;
+  text-align: ${props => props.isMine ? 'right' : 'left'};
+  width: 100%;
 `;
 
 const ChatRoom = () => {
@@ -334,8 +355,8 @@ const ChatRoom = () => {
   const lastMessageRef = useRef(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasMoreHistory, setHasMoreHistory] = useState(true);
-  const { user } = useContext(AuthContext);
-  const oldestTimestampRef = useRef(null);
+  const { user, isLoading: isUserLoading } = useContext(AuthContext);
+  const [cursorCreatedAt, setCursorCreatedAt] = useState(null);
 
   // 중복 요청 방지용 debounce
   let lastHistoryRequest = 0;
@@ -356,9 +377,15 @@ const ChatRoom = () => {
     navigate(-1);
   };
 
-  const loadChatHistory = async (cursorCreatedAt = null) => {
+  const loadChatHistory = async () => {
     if (!movieId || isLoadingHistory || !hasMoreHistory) return;
 
+    // 디바운스 체크
+    const now = Date.now();
+    if (now - lastHistoryRequest < DEBOUNCE_MS) return;
+    lastHistoryRequest = now;
+
+    console.log('요청 파라미터:', movieId, cursorCreatedAt);
     setIsLoadingHistory(true);
     try {
       const prevScrollHeight = chatMessagesRef.current ? chatMessagesRef.current.scrollHeight : 0;
@@ -366,18 +393,34 @@ const ChatRoom = () => {
       
       if (history.length === 0) {
         setHasMoreHistory(false);
+        // 이전 채팅이 없는 경우 시스템 메시지 추가
+        setMessages(prev => {
+          if (prev.length === 0) {
+            return [{
+              type: 'SYSTEM',
+              message: '이전 대화 내역이 없습니다.',
+              timestamp: new Date().toISOString()
+            }];
+          }
+          return prev;
+        });
         return;
       }
 
-      setMessages(prev => {
-        const newMessages = [...history, ...prev];
-        if (newMessages.length > 0) {
-          oldestTimestampRef.current = newMessages[0].timestamp;
-        }
-        return newMessages;
-      });
+      // 시간순으로 정렬하여 가장 오래된 메시지 찾기
+      const sortedHistory = [...history].sort((a, b) => 
+        new Date(a.timestamp) - new Date(b.timestamp)
+      );
+      const oldestTimestamp = sortedHistory[0].timestamp;
+      console.log('가장 오래된 메시지 시간:', oldestTimestamp);
 
-      if (chatMessagesRef.current && cursorCreatedAt) {
+      // 가장 오래된 메시지의 timestamp를 먼저 설정
+      setCursorCreatedAt(oldestTimestamp);
+
+      // 메시지 업데이트
+      setMessages(prev => [...history, ...prev]);
+
+      if (chatMessagesRef.current) {
         setTimeout(() => {
           const newScrollHeight = chatMessagesRef.current.scrollHeight;
           chatMessagesRef.current.scrollTop = newScrollHeight - prevScrollHeight;
@@ -391,22 +434,35 @@ const ChatRoom = () => {
     }
   };
 
+  // 스크롤 이벤트 핸들러
   const handleScroll = () => {
     if (!chatMessagesRef.current) return;
+
     const { scrollTop } = chatMessagesRef.current;
-    const now = Date.now();
-    if (
-      scrollTop === 0 &&
-      hasMoreHistory &&
-      !isLoadingHistory &&
-      now - lastHistoryRequest > DEBOUNCE_MS
-    ) {
-      lastHistoryRequest = now;
-      if (oldestTimestampRef.current) {
-        loadChatHistory(oldestTimestampRef.current);
-      }
+    if (scrollTop === 0 && hasMoreHistory && !isLoadingHistory) {
+      loadChatHistory();
     }
   };
+
+  // 컴포넌트 마운트 시 초기 히스토리 로드
+  useEffect(() => {
+    if (movieId) {
+      // 초기 로드 시 cursorCreatedAt을 null로 설정
+      setCursorCreatedAt(null);
+      loadChatHistory();
+    }
+  }, [movieId]);
+
+  // 스크롤 이벤트 리스너 등록
+  useEffect(() => {
+    const chatContainer = chatMessagesRef.current;
+    if (chatContainer) {
+      chatContainer.addEventListener('scroll', handleScroll);
+      return () => chatContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [hasMoreHistory, isLoadingHistory]);
+
+  // cursorCreatedAt 변경 시 히스토리 로드하는 useEffect 제거
 
   // 모바일 Pull to Refresh (맨 위에서 아래로 드래그 시)
   let startY = null;
@@ -422,10 +478,8 @@ const ChatRoom = () => {
     if (!pulling || startY === null) return;
     const deltaY = e.touches[0].clientY - startY;
     if (deltaY > 40 && hasMoreHistory && !isLoadingHistory) {
-      pulling = false; // 한 번만
-      if (oldestTimestampRef.current) {
-        loadChatHistory(oldestTimestampRef.current);
-      }
+      pulling = false;
+      loadChatHistory();
     }
   };
   const handleTouchEnd = () => {
@@ -447,9 +501,11 @@ const ChatRoom = () => {
   }, [hasMoreHistory, isLoadingHistory]);
 
   useEffect(() => {
+    if (isUserLoading) return; // 유저 정보 로딩 중이면 대기
+
     if (!user) {
       alert('로그인이 필요한 서비스입니다.');
-      navigate('/login');
+      window.location.href = 'https://localhost/api/login/';
       return;
     }
 
@@ -468,7 +524,12 @@ const ChatRoom = () => {
         client.subscribe(`/topic/chat-${movieId}`, (message) => {
           const newMessage = JSON.parse(message.body);
           if (newMessage.type === 'SYSTEM' || newMessage.type === 'CHAT') {
-            setMessages(prev => [...prev, newMessage]);
+            const messageWithFiltered = {
+              ...newMessage,
+              filteredMessage: newMessage.message,
+              timestamp: newMessage.timestamp || new Date().toISOString()
+            };
+            setMessages(prev => [...prev, messageWithFiltered]);
           } else if (Array.isArray(newMessage)) {
             setParticipants(new Set(newMessage));
           }
@@ -499,7 +560,7 @@ const ChatRoom = () => {
     return () => {
       client.deactivate();
     };
-  }, [movieId, user]);
+  }, [movieId, user, isUserLoading]);
 
   useEffect(() => {
     if (movieId && user) {
@@ -507,13 +568,6 @@ const ChatRoom = () => {
       loadChatHistory();
     }
   }, [movieId, user]);
-
-  // 메시지가 변경될 때마다 가장 오래된 메시지의 timestamp 업데이트
-  useEffect(() => {
-    if (messages.length > 0) {
-      oldestTimestampRef.current = messages[0].timestamp;
-    }
-  }, [messages]);
 
   // 내가 보낸 메시지일 때만 스크롤 다운
   useEffect(() => {
@@ -533,13 +587,15 @@ const ChatRoom = () => {
       return;
     }
 
+    const timestamp = new Date().toISOString();
     const chatMessage = {
       type: 'CHAT',
       movieId,
       senderId: user.payload.userId,
       nickName: user.payload.nickname,
       message: message.trim(),
-      timestamp: new Date().toISOString()
+      timestamp,
+      filteredMessage: message.trim()
     };
 
     try {
@@ -560,100 +616,134 @@ const ChatRoom = () => {
     }
   };
 
+  const formatMessageTime = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    if (isToday) {
+      return `${hours}:${minutes}`;
+    }
+    
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
+  };
+
   return (
     <ChatContainer>
       <ChatContent>
-        <ChatSidebar>
-          <ParticipantsList>
-            <ParticipantsTitle>
-              참여자 목록
-              <ParticipantsCount>
-                {participants.size}명 참여 중
-              </ParticipantsCount>
-            </ParticipantsTitle>
-            {Array.from(participants).map((nickname, index) => (
-              <ParticipantItem key={index}>{nickname}</ParticipantItem>
-            ))}
-          </ParticipantsList>
-          <LeaveButton onClick={handleLeave}>채팅방 나가기</LeaveButton>
-        </ChatSidebar>
-        
-        <ChatMain>
-          {isLoading ? (
-            <div>메시지 로딩 중...</div>
-          ) : (
-            <>
-              <ChatMessages 
-                ref={chatMessagesRef}
-                onScroll={handleScroll}
-              >
-                {isLoadingHistory && (
-                  <SystemMessage>
-                    이전 메시지를 불러오는 중...
-                  </SystemMessage>
-                )}
-                {messages.map((msg, index) => {
-                  if (msg.type === 'SYSTEM') {
-                    return (
-                      <SystemMessage key={index}>
-                        {msg.message}
+        {isUserLoading ? (
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100%',
+            color: '#fff',
+            fontSize: '1.2rem'
+          }}>
+            로딩 중...
+          </div>
+        ) : (
+          <>
+            <ChatSidebar>
+              <ParticipantsList>
+                <ParticipantsTitle>
+                  참여자 목록
+                  <ParticipantsCount>
+                    {participants.size}명 참여 중
+                  </ParticipantsCount>
+                </ParticipantsTitle>
+                {Array.from(participants).map((nickname, index) => (
+                  <ParticipantItem key={index}>{nickname}</ParticipantItem>
+                ))}
+              </ParticipantsList>
+              <LeaveButton onClick={handleLeave}>채팅방 나가기</LeaveButton>
+            </ChatSidebar>
+            
+            <ChatMain>
+              {isLoading ? (
+                <div>메시지 로딩 중...</div>
+              ) : (
+                <>
+                  <ChatMessages 
+                    ref={chatMessagesRef}
+                  >
+                    {isLoadingHistory && (
+                      <SystemMessage>
+                        이전 메시지를 불러오는 중...
                       </SystemMessage>
-                    );
-                  }
+                    )}
+                    {messages.map((msg, index) => {
+                      if (msg.type === 'SYSTEM') {
+                        return (
+                          <SystemMessage key={index}>
+                            {msg.message}
+                          </SystemMessage>
+                        );
+                      }
+                      
+                      const isMine = String(msg.senderId) === String(user?.payload?.userId);
+                      return (
+                        <MessageContainer key={index} isMine={isMine}>
+                          <SenderName isMine={isMine}>
+                            {msg.nickName}
+                          </SenderName>
+                          <Message isMine={isMine}>
+                            {msg.filteredMessage} 
+                          </Message>
+                          <MessageTime isMine={isMine}>
+                            {formatMessageTime(msg.timestamp)}
+                          </MessageTime>
+                        </MessageContainer>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </ChatMessages>
                   
-                  const isMine = String(msg.senderId) === String(user?.payload?.userId);
-                  return (
-                    <MessageContainer key={index} isMine={isMine}>
-                      <SenderName isMine={isMine}>
-                        {msg.nickName}
-                      </SenderName>
-                      <Message isMine={isMine}>
-                        {msg.filteredMessage}
-                      </Message>
-                    </MessageContainer>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </ChatMessages>
-              
-              <MessageInput>
-                <Input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={isConnected ? "메시지를 입력하세요..." : "연결 중..."}
-                  disabled={!isConnected}
-                />
-                <SendButton 
-                  onClick={handleSendMessage}
-                  disabled={!isConnected}
-                  style={{ opacity: isConnected ? 1 : 0.5 }}
-                >
-                  전송
-                </SendButton>
-              </MessageInput>
-            </>
-          )}
-        </ChatMain>
+                  <MessageInput>
+                    <Input
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={isConnected ? "메시지를 입력하세요..." : "연결 중..."}
+                      disabled={!isConnected}
+                    />
+                    <SendButton 
+                      onClick={handleSendMessage}
+                      disabled={!isConnected}
+                      style={{ opacity: isConnected ? 1 : 0.5 }}
+                    >
+                      전송
+                    </SendButton>
+                  </MessageInput>
+                </>
+              )}
+            </ChatMain>
 
-        <MovieInfoSidebar>
-          <MoviePoster 
-            src={movieInfo?.posterUrl || 'https://via.placeholder.com/300x450'} 
-            alt={movieInfo?.movieNm || '영화 포스터'}
-          />
-          <MovieInfo>
-            <MovieTitle>{movieInfo?.movieNm || '영화 제목'}</MovieTitle>
-            <MovieDescription>
-              {movieInfo?.plotText || '영화 설명이 없습니다.'}
-            </MovieDescription>
-            <MovieDetails>
-              <DetailItem>개봉일: {movieInfo?.releaseDate || '정보 없음'}</DetailItem>
-              <DetailItem>장르: {movieInfo?.genre || '정보 없음'}</DetailItem>
-              <DetailItem>감독: {movieInfo?.directors || '정보 없음'}</DetailItem>
-              <DetailItem>배우: {movieInfo?.actors || '정보 없음'}</DetailItem>
-            </MovieDetails>
-          </MovieInfo>
-        </MovieInfoSidebar>
+            <MovieInfoSidebar>
+              <MoviePoster 
+                src={movieInfo?.posterUrl || 'https://via.placeholder.com/300x450'} 
+                alt={movieInfo?.movieNm || '영화 포스터'}
+              />
+              <MovieInfo>
+                <MovieTitle>{movieInfo?.movieNm || '영화 제목'}</MovieTitle>
+                <MovieDescription>
+                  {movieInfo?.plotText || '영화 설명이 없습니다.'}
+                </MovieDescription>
+                <MovieDetails>
+                  <DetailItem>개봉일: {movieInfo?.releaseDate || '정보 없음'}</DetailItem>
+                  <DetailItem>장르: {movieInfo?.genre || '정보 없음'}</DetailItem>
+                  <DetailItem>감독: {movieInfo?.directors || '정보 없음'}</DetailItem>
+                  <DetailItem>배우: {movieInfo?.actors || '정보 없음'}</DetailItem>
+                </MovieDetails>
+              </MovieInfo>
+            </MovieInfoSidebar>
+          </>
+        )}
       </ChatContent>
       <Toast 
         message={toast.message}

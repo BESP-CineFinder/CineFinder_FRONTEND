@@ -297,8 +297,9 @@ export const checkFavorite = async (userId, movieIds) => {
 };
 
 // 채팅 히스토리 조회
-export const getChatHistory = async (movieId, cursorCreatedAt = null) => {
+export const getChatHistory = async (movieId, cursorCreatedAt) => {
   try {
+    console.log(movieId, cursorCreatedAt);
     const params = {
       movieId,
       size: 20
@@ -307,9 +308,9 @@ export const getChatHistory = async (movieId, cursorCreatedAt = null) => {
     if (cursorCreatedAt) {
       params.cursorCreatedAt = cursorCreatedAt;
     }
-
+    console.log(params);
     const response = await api.get('/api/chat-log', { params });
-    
+    console.log(response);
     if (!response.data || !response.data.payload) {
       throw new Error('채팅 기록을 가져오는데 실패했습니다.');
     }
