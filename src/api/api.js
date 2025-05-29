@@ -283,11 +283,12 @@ export const updateFavorite = async (favoriteRequestDto) => {
 // 즐겨찾기 여부 확인
 export const checkFavorite = async (userId, movieIds) => {
   try {
-    // URL 파라미터를 직접 구성
-    const movieIdParam = movieIds.join('&');
-    const url = `/api/favorite?userId=${userId}&movieId=${movieIdParam}`;
+    // movieIds를 배열 형태로 전달
+    const params = new URLSearchParams();
+    params.append('userId', userId);
+    movieIds.forEach(id => params.append('movieId', id));
     
-    const response = await api.get(url);
+    const response = await api.get(`/api/favorite?${params.toString()}`);
     return response.data;
   } catch (error) {
     console.error('Check favorite error:', error);

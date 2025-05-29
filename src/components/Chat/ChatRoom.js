@@ -64,7 +64,7 @@ const ChatMain = styled.div`
 `;
 
 const MovieInfoSidebar = styled.div`
-  width: 300px;
+  width: 270px;
   background: #212121;
   padding: 20px;
   display: flex;
@@ -87,7 +87,7 @@ const MovieInfo = styled.div`
 
 const MovieTitle = styled.h2`
   color: #fff;
-  font-size: 1.4rem;
+  font-size: 1rem;
   margin: 0;
 `;
 

@@ -3,7 +3,7 @@ import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
 import { useNavigate } from 'react-router-dom';
-import { getDailyBoxOffice, checkFavorite, updateFavorite } from '../api/api';
+import { getDailyBoxOffice, checkFavorite } from '../api/api';
 import { AuthContext } from '../utils/auth/contexts/AuthProvider';
 import FavoriteButton from '../components/Button/FavoriteButton';
 
@@ -20,18 +20,53 @@ const MainPage = () => {
   const navigate = useNavigate();
   const [boxOfficeMovies, setBoxOfficeMovies] = useState([]);
   const [favoriteStatus, setFavoriteStatus] = useState({});
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // 박스오피스 영화 목록 가져오기
   useEffect(() => {
-    fetchBoxOfficeMovies();
-  }, [user]);
+    const fetchBoxOfficeMovies = async () => {
+      try {
+        setLoading(true);
+        const response = await getDailyBoxOffice();
+        
+        if (!response.payload || !Array.isArray(response.payload)) {
+          throw new Error('박스오피스 데이터가 올바르지 않습니다.');
+        }
 
+        const movies = response.payload.map(movie => ({
+          ...movie,
+          movieDetails: {
+            ...movie.movieDetails,
+            posters: movie.movieDetails?.posters ? movie.movieDetails.posters.split('|')[0] : '',
+            stlls: movie.movieDetails?.stlls ? movie.movieDetails.stlls.split('|') : [],
+            vods: movie.movieDetails?.vods ? movie.movieDetails.vods.split('|') : [],
+            directors: movie.movieDetails?.directors ? movie.movieDetails.directors.split('|') : [],
+            actors: movie.movieDetails?.actors ? movie.movieDetails.actors.split('|') : []
+          }
+        }));
+
+        setBoxOfficeMovies(movies);
+      } catch (err) {
+        setError('영화 정보를 불러오는데 실패했습니다.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBoxOfficeMovies();
+  }, []); // 페이지 진입 시마다 박스오피스 정보 가져오기
+
+  // 좋아요 상태 동기화
   useEffect(() => {
     const fetchFavoriteStatus = async () => {
       if (!user || !boxOfficeMovies.length) return;
       
       try {
         const movieIds = boxOfficeMovies.map(movie => movie.movieId);
+        console.log(movieIds);
         const response = await checkFavorite(user.payload.userId, movieIds);
+        console.log(response);
         if (response && response.success) {
           const statusMap = response.payload.reduce((acc, item) => {
             acc[item.movieId] = item.favorite;
@@ -44,38 +79,10 @@ const MainPage = () => {
       }
     };
 
+    // 로그인 상태가 변경되거나 박스오피스 영화 목록이 변경될 때마다 좋아요 상태 초기화
+    setFavoriteStatus({}); // 좋아요 상태 초기화
     fetchFavoriteStatus();
-  }, [user, boxOfficeMovies]);
-
-  const fetchBoxOfficeMovies = async () => {
-    try {
-      setLoading(true);
-      const response = await getDailyBoxOffice();
-      
-      if (!response.payload || !Array.isArray(response.payload)) {
-        throw new Error('박스오피스 데이터가 올바르지 않습니다.');
-      }
-
-      let movies = response.payload.map(movie => ({
-        ...movie,
-        movieDetails: {
-          ...movie.movieDetails,
-          posters: movie.movieDetails?.posters ? movie.movieDetails.posters.split('|')[0] : '',
-          stlls: movie.movieDetails?.stlls ? movie.movieDetails.stlls.split('|') : [],
-          vods: movie.movieDetails?.vods ? movie.movieDetails.vods.split('|') : [],
-          directors: movie.movieDetails?.directors ? movie.movieDetails.directors.split('|') : [],
-          actors: movie.movieDetails?.actors ? movie.movieDetails.actors.split('|') : []
-        }
-      }));
-
-      setBoxOfficeMovies(movies);
-    } catch (err) {
-      setError('영화 정보를 불러오는데 실패했습니다.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, boxOfficeMovies]); // user와 boxOfficeMovies가 변경될 때마다 좋아요 상태 동기화
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -150,15 +157,11 @@ const MainPage = () => {
 
   const handleFavoriteToggle = async (movieId, newStatus) => {
     if (!user) return;
-    try {
-      await updateFavorite({ userId: user.payload.userId, movieId });
-      setFavoriteStatus(prev => ({
-        ...prev,
-        [movieId]: newStatus
-      }));
-    } catch (err) {
-      alert('즐겨찾기 변경에 실패했습니다.');
-    }
+    // FavoriteButton에서 이미 API를 호출하므로 여기서는 상태만 업데이트
+    setFavoriteStatus(prev => ({
+      ...prev,
+      [movieId]: newStatus
+    }));
   };
 
   // 박스오피스 영화 예매하기 핸들러
@@ -178,6 +181,18 @@ const MainPage = () => {
     };
     navigate('/theater-search-result', { state: searchParams });
   };
+
+  // 새로고침 시 상태 초기화
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      setIsInitialLoad(true);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   return (
     <div className="main-container">
