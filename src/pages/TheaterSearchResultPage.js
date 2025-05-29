@@ -94,7 +94,7 @@ const TheaterSearchResultPage = () => {
         minTime: searchParams.minTime,
         maxTime: searchParams.maxTime,
         distance: searchParams.distance.toString(),
-        movieNames: searchParams.movieNames ? searchParams.movieNames : []
+        movieIds: searchParams.movieIds ? searchParams.movieIds : []
       };
 
       const data = await getScreenSchedules(requestData);
