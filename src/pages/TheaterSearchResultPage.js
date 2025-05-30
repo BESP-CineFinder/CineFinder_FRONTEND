@@ -301,6 +301,16 @@ const TheaterSearchResultPage = () => {
     }
   }, [searchParams]);
 
+  // 검색 결과가 로드되면 맨 위로 스크롤
+  useEffect(() => {
+    if (searchResults && !isLoading) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  }, [searchResults, isLoading]);
+
   if (isLoading || isLocating) {
     return (
       <div className="theater-search-result-container" style={{
@@ -401,11 +411,48 @@ const TheaterSearchResultPage = () => {
   return (
     <div className="theater-search-result-container">
       <div className="result-box">
-        <div className="tsr-dynamic-title">
+        <div className="tsr-dynamic-title" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '24px',
+          padding: '16px 24px',
+          background: 'linear-gradient(135deg, #4f29f0 0%, #6c2eb7 100%)',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(79, 41, 240, 0.15)'
+        }}>
           {searchParams && (
             <>
-              <span className="tsr-time-range">{searchParams.minTime || '00:00'} ~ {searchParams.maxTime || '23:59'}</span>
-              <span className="tsr-title-desc"> 근처 영화관 상영 정보</span>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                backdropFilter: 'blur(4px)'
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span style={{
+                  color: '#fff',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  fontFamily: 'B_Pro'
+                }}>
+                  {searchParams.minTime || '00:00'} ~ {searchParams.maxTime || '23:59'}
+                </span>
+              </div>
+              <span style={{
+                color: '#fff',
+                fontSize: '1.2rem',
+                fontWeight: '500',
+                fontFamily: 'B_Pro',
+                opacity: 0.9
+              }}>
+                근처 영화관 상영 정보
+              </span>
             </>
           )}
         </div>

@@ -3,7 +3,7 @@ import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
 import { useNavigate } from 'react-router-dom';
-import { getDailyBoxOffice, checkFavorite } from '../api/api';
+import { getDailyBoxOffice, checkFavorite, getRecommendMovies } from '../api/api';
 import { AuthContext } from '../utils/auth/contexts/AuthProvider';
 import FavoriteButton from '../components/Button/FavoriteButton';
 
@@ -21,6 +21,9 @@ const MainPage = () => {
   const [boxOfficeMovies, setBoxOfficeMovies] = useState([]);
   const [favoriteStatus, setFavoriteStatus] = useState({});
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [recommendMovies, setRecommendMovies] = useState([]);
+  const [recommendLoading, setRecommendLoading] = useState(true);
+  const [recommendError, setRecommendError] = useState(null);
 
   // 박스오피스 영화 목록 가져오기
   useEffect(() => {
@@ -57,16 +60,52 @@ const MainPage = () => {
     fetchBoxOfficeMovies();
   }, []); // 페이지 진입 시마다 박스오피스 정보 가져오기
 
-  // 좋아요 상태 동기화
+  // 추천 영화 목록 가져오기
+  useEffect(() => {
+    const fetchRecommendMovies = async () => {
+      try {
+        setRecommendLoading(true);
+        const response = await getRecommendMovies();
+        
+        if (!response.payload || !Array.isArray(response.payload)) {
+          throw new Error('추천 영화 데이터가 올바르지 않습니다.');
+        }
+
+        const movies = response.payload.map(movie => ({
+          ...movie,
+          movieDetails: {
+            ...movie.movieDetails,
+            posters: movie.movieDetails?.posters ? movie.movieDetails.posters.split('|')[0] : '',
+            stlls: movie.movieDetails?.stlls ? movie.movieDetails.stlls.split('|') : [],
+            vods: movie.movieDetails?.vods ? movie.movieDetails.vods.split('|') : [],
+            directors: movie.movieDetails?.directors ? movie.movieDetails.directors.split('|') : [],
+            actors: movie.movieDetails?.actors ? movie.movieDetails.actors.split('|') : []
+          }
+        }));
+
+        setRecommendMovies(movies);
+      } catch (err) {
+        setRecommendError('추천 영화 정보를 불러오는데 실패했습니다.');
+        console.error(err);
+      } finally {
+        setRecommendLoading(false);
+      }
+    };
+
+    fetchRecommendMovies();
+  }, []);
+
+  // 좋아요 상태 동기화 (추천 영화 포함)
   useEffect(() => {
     const fetchFavoriteStatus = async () => {
-      if (!user || !boxOfficeMovies.length) return;
+      if (!user || (!boxOfficeMovies.length && !recommendMovies.length)) return;
       
       try {
-        const movieIds = boxOfficeMovies.map(movie => movie.movieId);
-        console.log(movieIds);
+        const movieIds = [
+          ...boxOfficeMovies.map(movie => movie.movieId),
+          ...recommendMovies.map(movie => movie.movieId)
+        ];
         const response = await checkFavorite(user.payload.userId, movieIds);
-        console.log(response);
         if (response && response.success) {
           const statusMap = response.payload.reduce((acc, item) => {
             acc[item.movieId] = item.favorite;
@@ -79,10 +118,9 @@ const MainPage = () => {
       }
     };
 
-    // 로그인 상태가 변경되거나 박스오피스 영화 목록이 변경될 때마다 좋아요 상태 초기화
-    setFavoriteStatus({}); // 좋아요 상태 초기화
+    setFavoriteStatus({});
     fetchFavoriteStatus();
-  }, [user, boxOfficeMovies]); // user와 boxOfficeMovies가 변경될 때마다 좋아요 상태 동기화
+  }, [user, boxOfficeMovies, recommendMovies]);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -252,6 +290,79 @@ const MainPage = () => {
                         <button 
                           className="movie-button detail-button"
                           onClick={() => handleDetailClick(movie)}
+                        >
+                          상세정보
+                        </button>
+                        <button 
+                          className="movie-button theater-button"
+                          onClick={() => handleBoxOfficeReserve(movie.movieId)}
+                        >
+                          예매하기
+                        </button>
+                      </div>
+                      {user && (
+                        <FavoriteButton 
+                          userId={user.payload.userId}
+                          movieId={movie.movieId}
+                          isFavorite={favoriteStatus[movie.movieId] || false}
+                          onToggle={(newStatus) => handleFavoriteToggle(movie.movieId, newStatus)}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="slider-button next" onClick={handleNextClick}>
+                <svg viewBox="0 0 24 24">
+                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* 추천 영화 섹션 */}
+        <section className="section">
+          <h2 className="section-title">
+            <span className="section-title-emoji">🎯</span>
+            CineFinder 추천 영화
+          </h2>
+          {recommendLoading ? (
+            <div className="loading">로딩중...</div>
+          ) : recommendError ? (
+            <div className="error">{recommendError}</div>
+          ) : (
+            <div className="movie-slider-container">
+              <button className="slider-button prev" onClick={handlePrevClick}>
+                <svg viewBox="0 0 24 24">
+                  <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+              </button>
+              <div 
+                className="movie-slider" 
+                ref={sliderRef}
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+                onMouseMove={handleMouseMove}
+                style={{ cursor: 'grab' }}
+              >
+                {recommendMovies.map((movie) => (
+                  <div key={movie.movieId} className="movie-card">
+                    <div className="main-movie-poster">
+                      <img
+                        src={movie.movieDetails?.posters || 'https://via.placeholder.com/300x450'}
+                        alt={movie.movieDetails.movieNm}
+                      />
+                      <div className="movie-overlay">
+                        <button 
+                          className="movie-button detail-button"
+                          onClick={() => handleDetailClick({
+                            movieId: movie.movieId,
+                            movieKey: movie.movieId,
+                            movieNm: movie.movieDetails.movieNm,
+                            movieDetails: movie.movieDetails
+                          })}
                         >
                           상세정보
                         </button>

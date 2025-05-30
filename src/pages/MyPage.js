@@ -293,7 +293,7 @@ const MyPage = () => {
       <PageTitle>마이페이지</PageTitle>
       <SectionTitle>즐겨찾기한 영화</SectionTitle>
       <FavoriteMoviesContainer>
-        {favoriteMovies.length === 0 ? (
+        {!favoriteMovies || favoriteMovies.length === 0 ? (
           <EmptyMessage>즐겨찾기한 영화가 없습니다.</EmptyMessage>
         ) : (
           <MovieSliderContainer>

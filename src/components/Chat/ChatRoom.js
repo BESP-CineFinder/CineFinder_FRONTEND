@@ -385,15 +385,17 @@ const ChatRoom = () => {
     if (now - lastHistoryRequest < DEBOUNCE_MS) return;
     lastHistoryRequest = now;
 
-    console.log('요청 파라미터:', movieId, cursorCreatedAt);
     setIsLoadingHistory(true);
     try {
-      const prevScrollHeight = chatMessagesRef.current ? chatMessagesRef.current.scrollHeight : 0;
+      // 현재 스크롤 위치와 높이 저장
+      const chatContainer = chatMessagesRef.current;
+      const prevScrollHeight = chatContainer ? chatContainer.scrollHeight : 0;
+      const prevScrollTop = chatContainer ? chatContainer.scrollTop : 0;
+
       const history = await getChatHistory(movieId, cursorCreatedAt);
       
       if (history.length === 0) {
         setHasMoreHistory(false);
-        // 이전 채팅이 없는 경우 시스템 메시지 추가
         setMessages(prev => {
           if (prev.length === 0) {
             return [{
@@ -407,24 +409,19 @@ const ChatRoom = () => {
         return;
       }
 
-      // 시간순으로 정렬하여 가장 오래된 메시지 찾기
-      const sortedHistory = [...history].sort((a, b) => 
-        new Date(a.timestamp) - new Date(b.timestamp)
-      );
-      const oldestTimestamp = sortedHistory[0].timestamp;
-      console.log('가장 오래된 메시지 시간:', oldestTimestamp);
-
-      // 가장 오래된 메시지의 timestamp를 먼저 설정
+      const oldestTimestamp = history[history.length-1].timestamp;
       setCursorCreatedAt(oldestTimestamp);
 
-      // 메시지 업데이트
-      setMessages(prev => [...history, ...prev]);
+      const reversedHistory = [...history].reverse();
+      setMessages(prev => [...reversedHistory, ...prev]);
 
-      if (chatMessagesRef.current) {
-        setTimeout(() => {
-          const newScrollHeight = chatMessagesRef.current.scrollHeight;
-          chatMessagesRef.current.scrollTop = newScrollHeight - prevScrollHeight;
-        }, 0);
+      // 스크롤 위치 조정
+      if (chatContainer) {
+        requestAnimationFrame(() => {
+          const newScrollHeight = chatContainer.scrollHeight;
+          const scrollDiff = newScrollHeight - prevScrollHeight;
+          chatContainer.scrollTop = prevScrollTop + scrollDiff;
+        });
       }
     } catch (error) {
       console.error('채팅 히스토리 로드 실패:', error);

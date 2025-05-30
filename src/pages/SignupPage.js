@@ -58,7 +58,7 @@ function SignupPage() {
           placeholder="닉네임 입력"
           required
           aria-label="닉네임"
-          style={{ width: '100%', padding: '0.7rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 4, fontSize: 15 }}
+          style={{ width: '88%', padding: '0.7rem', borderRadius: 6, border: '1px solid #ccc', marginTop: 4, fontSize: 15 }}
         />
       </div>
       <button type="submit" style={{ width: '100%', background: '#FEE500', color: '#181600', border: 'none', borderRadius: 8, padding: '0.9rem', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer' }}>

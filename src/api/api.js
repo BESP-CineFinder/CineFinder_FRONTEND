@@ -299,22 +299,20 @@ export const checkFavorite = async (userId, movieIds) => {
 // 채팅 히스토리 조회
 export const getChatHistory = async (movieId, cursorCreatedAt) => {
   try {
-    console.log(movieId, cursorCreatedAt);
     const params = {
       movieId,
       size: 20
     };
-    
+    console.log(cursorCreatedAt);
     if (cursorCreatedAt) {
       params.cursorCreatedAt = cursorCreatedAt;
     }
     console.log(params);
     const response = await api.get('/api/chat-log', { params });
-    console.log(response);
     if (!response.data || !response.data.payload) {
       throw new Error('채팅 기록을 가져오는데 실패했습니다.');
     }
-
+    console.log(response.data.payload);
     return response.data.payload.map(msg => ({
       type: msg.type,
       movieId,
@@ -323,9 +321,9 @@ export const getChatHistory = async (movieId, cursorCreatedAt) => {
       message: msg.message,
       timestamp: msg.createdAt,
       filteredMessage: msg.message
-    })).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    }));
   } catch (error) {
-    console.error('Get chat history error:', error);
+    console.error('채팅 히스토리 조회 실패:', error);
     throw error;
   }
 };
@@ -341,6 +339,17 @@ export const searchMovies = async (keyword) => {
   } catch (error) {
     console.error('영화 키워드 검색 실패:', error);
     return [];
+  }
+};
+
+// 추천 영화 목록 조회
+export const getRecommendMovies = async () => {
+  try {
+    const response = await api.get('/api/recommend');
+    return response.data;
+  } catch (error) {
+    console.error('Get recommend movies error:', error);
+    throw error;
   }
 };
 
