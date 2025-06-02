@@ -348,6 +348,7 @@ const ChatRoom = () => {
   const [stompClient, setStompClient] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isWebSocketReady, setIsWebSocketReady] = useState(false);
   const [participants, setParticipants] = useState(new Set());
   const [toast, setToast] = useState({ show: false, message: '' });
   const messagesEndRef = useRef(null);
@@ -497,57 +498,31 @@ const ChatRoom = () => {
     };
   }, [hasMoreHistory, isLoadingHistory]);
 
+  const handleWebSocketError = (error) => {
+    console.error('WebSocket Error:', error);
+    showToast('채팅 연결에 실패했습니다. 다시 시도해주세요.');
+    setIsConnected(false);
+    setIsWebSocketReady(false);
+    handleLeave();
+  };
+
+  // 웹소켓 연결 설정
   useEffect(() => {
-    if (isUserLoading) return; // 유저 정보 로딩 중이면 대기
-
-    if (!user) {
-      alert('로그인이 필요한 서비스입니다.');
-      window.location.href = 'https://localhost/api/login/';
-      return;
-    }
-
-    if (!movieId || movieId === 'undefined') {
-      alert('잘못된 접근입니다.');
-      navigate('/');
-      return;
-    }
+    if (isUserLoading || !user || !movieId) return;
 
     const socket = new SockJS(process.env.REACT_APP_WEBSOCKET_URL || 'https://localhost/CineFinder-ws');
     const client = new Client({
       webSocketFactory: () => socket,
       onConnect: () => {
         setIsConnected(true);
-
-        client.subscribe(`/topic/chat-${movieId}`, (message) => {
-          const newMessage = JSON.parse(message.body);
-          if (newMessage.type === 'SYSTEM' || newMessage.type === 'CHAT') {
-            const messageWithFiltered = {
-              ...newMessage,
-              filteredMessage: newMessage.filteredMessage,
-              timestamp: newMessage.timestamp || new Date().toISOString()
-            };
-            setMessages(prev => [...prev, messageWithFiltered]);
-          } else if (Array.isArray(newMessage)) {
-            setParticipants(new Set(newMessage));
-          }
-        });
-
-        const joinMessage = {
-          type: 'JOIN',
-          movieId,
-          senderId: user.payload.userId,
-          nickName: user.payload.nickname,
-          timestamp: new Date().toISOString()
-        };
-        client.publish({
-          destination: `/app/chat-${movieId}/join`,
-          body: JSON.stringify(joinMessage)
-        });
+        setIsWebSocketReady(true);
       },
-      onDisconnect: () => setIsConnected(false),
-      onStompError: (frame) => {
+      onDisconnect: () => {
         setIsConnected(false);
-        handleLeave();
+        setIsWebSocketReady(false);
+      },
+      onStompError: (frame) => {
+        handleWebSocketError(frame);
       }
     });
 
@@ -558,6 +533,45 @@ const ChatRoom = () => {
       client.deactivate();
     };
   }, [movieId, user, isUserLoading]);
+
+  // 구독 및 Join 메시지 처리
+  useEffect(() => {
+    if (!isWebSocketReady || !stompClient || !user || !movieId) return;
+
+    // 구독 설정
+    const subscription = stompClient.subscribe(`/topic/chat-${movieId}`, (message) => {
+      const newMessage = JSON.parse(message.body);
+      
+      if (newMessage.type === 'JOIN' || newMessage.type === 'SYSTEM' || newMessage.type === 'CHAT') {
+        const messageWithFiltered = {
+          ...newMessage,
+          filteredMessage: newMessage.filteredMessage || newMessage.message,
+          timestamp: newMessage.timestamp || new Date().toISOString()
+        };
+        setMessages(prev => [...prev, messageWithFiltered]);
+      } else if (Array.isArray(newMessage)) {
+        setParticipants(new Set(newMessage));
+      }
+    });
+
+    // Join 메시지 전송
+    const joinMessage = {
+      type: 'JOIN',
+      movieId,
+      senderId: user.payload.userId,
+      nickName: user.payload.nickname,
+      timestamp: new Date().toISOString()
+    };
+
+    stompClient.publish({
+      destination: `/app/chat-${movieId}/join`,
+      body: JSON.stringify(joinMessage)
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [isWebSocketReady, stompClient, user, movieId]);
 
   useEffect(() => {
     if (movieId && user) {
