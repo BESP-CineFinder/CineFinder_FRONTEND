@@ -538,6 +538,8 @@ const ChatRoom = () => {
   useEffect(() => {
     if (!isWebSocketReady || !stompClient || !user || !movieId) return;
 
+    let isSubscribed = false;
+
     // 구독 설정
     const subscription = stompClient.subscribe(`/topic/chat-${movieId}`, (message) => {
       const newMessage = JSON.parse(message.body);
@@ -554,21 +556,32 @@ const ChatRoom = () => {
       }
     });
 
-    // Join 메시지 전송
-    const joinMessage = {
-      type: 'JOIN',
-      movieId,
-      senderId: user.payload.userId,
-      nickName: user.payload.nickname,
-      timestamp: new Date().toISOString()
+    // 구독 완료 후 Join 메시지 전송
+    const sendJoinMessage = () => {
+      if (isSubscribed) return;
+      isSubscribed = true;
+
+      const joinMessage = {
+        type: 'JOIN',
+        movieId,
+        senderId: user.payload.userId,
+        nickName: user.payload.nickname,
+        timestamp: new Date().toISOString()
+      };
+
+      stompClient.publish({
+        destination: `/app/chat-${movieId}/join`,
+        body: JSON.stringify(joinMessage)
+      });
     };
 
-    stompClient.publish({
-      destination: `/app/chat-${movieId}/join`,
-      body: JSON.stringify(joinMessage)
-    });
+    // 구독 완료 확인을 위한 타이머
+    const subscriptionTimer = setTimeout(() => {
+      sendJoinMessage();
+    }, 1000); // 1초 후 구독 완료로 가정하고 Join 메시지 전송
 
     return () => {
+      clearTimeout(subscriptionTimer);
       subscription.unsubscribe();
     };
   }, [isWebSocketReady, stompClient, user, movieId]);
