@@ -43,7 +43,7 @@
 
 .header-search-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 600px;
   margin: 0 auto;
   justify-self: start;
   margin-left: -1.5rem;
@@ -82,9 +82,9 @@
 
 .header-search-icon {
   position: absolute;
-  right: 0.75rem;
+  right: -3.2rem;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-55%);
   background: none;
   border: none;
   cursor: pointer;

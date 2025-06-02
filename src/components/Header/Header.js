@@ -80,7 +80,7 @@ const Header = () => {
                 <div className="header-search-box">
                   <input
                     type="text"
-                    placeholder="영화 제목을 입력하세요"
+                    placeholder="영화와 관련된 키워드를 입력하세요(배우, 감독, 영화 제목 등) 🔍"
                     className="header-search-input"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
