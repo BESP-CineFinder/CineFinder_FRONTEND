@@ -13,10 +13,14 @@ const MainPage = () => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const sliderRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
+  const boxOfficeSliderRef = useRef(null);
+  const recommendSliderRef = useRef(null);
+  const [isBoxOfficeDragging, setIsBoxOfficeDragging] = useState(false);
+  const [isRecommendDragging, setIsRecommendDragging] = useState(false);
+  const [boxOfficeStartX, setBoxOfficeStartX] = useState(0);
+  const [recommendStartX, setRecommendStartX] = useState(0);
+  const [boxOfficeScrollLeft, setBoxOfficeScrollLeft] = useState(0);
+  const [recommendScrollLeft, setRecommendScrollLeft] = useState(0);
   const navigate = useNavigate();
   const [boxOfficeMovies, setBoxOfficeMovies] = useState([]);
   const [favoriteStatus, setFavoriteStatus] = useState({});
@@ -122,52 +126,104 @@ const MainPage = () => {
     fetchFavoriteStatus();
   }, [user, boxOfficeMovies, recommendMovies]);
 
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setStartX(e.pageX - sliderRef.current.offsetLeft);
-    setScrollLeft(sliderRef.current.scrollLeft);
-    sliderRef.current.style.cursor = 'grabbing';
-    sliderRef.current.classList.add('dragging');
+  const handleBoxOfficeMouseDown = (e) => {
+    setIsBoxOfficeDragging(true);
+    setBoxOfficeStartX(e.pageX - boxOfficeSliderRef.current.offsetLeft);
+    setBoxOfficeScrollLeft(boxOfficeSliderRef.current.scrollLeft);
+    boxOfficeSliderRef.current.style.cursor = 'grabbing';
+    boxOfficeSliderRef.current.classList.add('dragging');
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    if (sliderRef.current) {
-      sliderRef.current.style.cursor = 'grab';
-      sliderRef.current.classList.remove('dragging');
+  const handleRecommendMouseDown = (e) => {
+    setIsRecommendDragging(true);
+    setRecommendStartX(e.pageX - recommendSliderRef.current.offsetLeft);
+    setRecommendScrollLeft(recommendSliderRef.current.scrollLeft);
+    recommendSliderRef.current.style.cursor = 'grabbing';
+    recommendSliderRef.current.classList.add('dragging');
+  };
+
+  const handleBoxOfficeMouseUp = () => {
+    setIsBoxOfficeDragging(false);
+    if (boxOfficeSliderRef.current) {
+      boxOfficeSliderRef.current.style.cursor = 'grab';
+      boxOfficeSliderRef.current.classList.remove('dragging');
     }
   };
 
-  const handleMouseLeave = () => {
-    setIsDragging(false);
-    if (sliderRef.current) {
-      sliderRef.current.style.cursor = 'grab';
-      sliderRef.current.classList.remove('dragging');
+  const handleRecommendMouseUp = () => {
+    setIsRecommendDragging(false);
+    if (recommendSliderRef.current) {
+      recommendSliderRef.current.style.cursor = 'grab';
+      recommendSliderRef.current.classList.remove('dragging');
     }
   };
 
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
+  const handleBoxOfficeMouseLeave = () => {
+    setIsBoxOfficeDragging(false);
+    if (boxOfficeSliderRef.current) {
+      boxOfficeSliderRef.current.style.cursor = 'grab';
+      boxOfficeSliderRef.current.classList.remove('dragging');
+    }
+  };
+
+  const handleRecommendMouseLeave = () => {
+    setIsRecommendDragging(false);
+    if (recommendSliderRef.current) {
+      recommendSliderRef.current.style.cursor = 'grab';
+      recommendSliderRef.current.classList.remove('dragging');
+    }
+  };
+
+  const handleBoxOfficeMouseMove = (e) => {
+    if (!isBoxOfficeDragging) return;
     e.preventDefault();
-    const x = e.pageX - sliderRef.current.offsetLeft;
-    const walk = (x - startX) * 2;
-    sliderRef.current.scrollLeft = scrollLeft - walk;
+    const x = e.pageX - boxOfficeSliderRef.current.offsetLeft;
+    const walk = (x - boxOfficeStartX) * 2;
+    boxOfficeSliderRef.current.scrollLeft = boxOfficeScrollLeft - walk;
   };
 
-  const handlePrevClick = () => {
-    if (sliderRef.current) {
-      const scrollAmount = sliderRef.current.offsetWidth * 0.8;
-      sliderRef.current.scrollBy({
+  const handleRecommendMouseMove = (e) => {
+    if (!isRecommendDragging) return;
+    e.preventDefault();
+    const x = e.pageX - recommendSliderRef.current.offsetLeft;
+    const walk = (x - recommendStartX) * 2;
+    recommendSliderRef.current.scrollLeft = recommendScrollLeft - walk;
+  };
+
+  const handleBoxOfficePrevClick = () => {
+    if (boxOfficeSliderRef.current) {
+      const scrollAmount = boxOfficeSliderRef.current.offsetWidth * 0.8;
+      boxOfficeSliderRef.current.scrollBy({
         left: -scrollAmount,
         behavior: 'smooth'
       });
     }
   };
 
-  const handleNextClick = () => {
-    if (sliderRef.current) {
-      const scrollAmount = sliderRef.current.offsetWidth * 0.8;
-      sliderRef.current.scrollBy({
+  const handleBoxOfficeNextClick = () => {
+    if (boxOfficeSliderRef.current) {
+      const scrollAmount = boxOfficeSliderRef.current.offsetWidth * 0.8;
+      boxOfficeSliderRef.current.scrollBy({
+        left: scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleRecommendPrevClick = () => {
+    if (recommendSliderRef.current) {
+      const scrollAmount = recommendSliderRef.current.offsetWidth * 0.8;
+      recommendSliderRef.current.scrollBy({
+        left: -scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleRecommendNextClick = () => {
+    if (recommendSliderRef.current) {
+      const scrollAmount = recommendSliderRef.current.offsetWidth * 0.8;
+      recommendSliderRef.current.scrollBy({
         left: scrollAmount,
         behavior: 'smooth'
       });
@@ -265,18 +321,18 @@ const MainPage = () => {
             <div className="error">{error}</div>
           ) : (
             <div className="movie-slider-container">
-              <button className="slider-button prev" onClick={handlePrevClick}>
+              <button className="slider-button prev" onClick={handleBoxOfficePrevClick}>
                 <svg viewBox="0 0 24 24">
                   <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
                 </svg>
               </button>
               <div 
                 className="movie-slider" 
-                ref={sliderRef}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
-                onMouseMove={handleMouseMove}
+                ref={boxOfficeSliderRef}
+                onMouseDown={handleBoxOfficeMouseDown}
+                onMouseUp={handleBoxOfficeMouseUp}
+                onMouseLeave={handleBoxOfficeMouseLeave}
+                onMouseMove={handleBoxOfficeMouseMove}
                 style={{ cursor: 'grab' }}
               >
                 {boxOfficeMovies.map((movie) => (
@@ -312,7 +368,7 @@ const MainPage = () => {
                   </div>
                 ))}
               </div>
-              <button className="slider-button next" onClick={handleNextClick}>
+              <button className="slider-button next" onClick={handleBoxOfficeNextClick}>
                 <svg viewBox="0 0 24 24">
                   <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                 </svg>
@@ -333,18 +389,18 @@ const MainPage = () => {
             <div className="error">{recommendError}</div>
           ) : (
             <div className="movie-slider-container">
-              <button className="slider-button prev" onClick={handlePrevClick}>
+              <button className="slider-button prev" onClick={handleRecommendPrevClick}>
                 <svg viewBox="0 0 24 24">
                   <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
                 </svg>
               </button>
               <div 
                 className="movie-slider" 
-                ref={sliderRef}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
-                onMouseMove={handleMouseMove}
+                ref={recommendSliderRef}
+                onMouseDown={handleRecommendMouseDown}
+                onMouseUp={handleRecommendMouseUp}
+                onMouseLeave={handleRecommendMouseLeave}
+                onMouseMove={handleRecommendMouseMove}
                 style={{ cursor: 'grab' }}
               >
                 {recommendMovies.map((movie) => (
@@ -385,7 +441,7 @@ const MainPage = () => {
                   </div>
                 ))}
               </div>
-              <button className="slider-button next" onClick={handleNextClick}>
+              <button className="slider-button next" onClick={handleRecommendNextClick}>
                 <svg viewBox="0 0 24 24">
                   <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                 </svg>

@@ -523,7 +523,7 @@ const ChatRoom = () => {
           if (newMessage.type === 'SYSTEM' || newMessage.type === 'CHAT') {
             const messageWithFiltered = {
               ...newMessage,
-              filteredMessage: newMessage.message,
+              filteredMessage: newMessage.filteredMessage,
               timestamp: newMessage.timestamp || new Date().toISOString()
             };
             setMessages(prev => [...prev, messageWithFiltered]);
@@ -734,8 +734,20 @@ const ChatRoom = () => {
                 <MovieDetails>
                   <DetailItem>개봉일: {movieInfo?.releaseDate || '정보 없음'}</DetailItem>
                   <DetailItem>장르: {movieInfo?.genre || '정보 없음'}</DetailItem>
-                  <DetailItem>감독: {movieInfo?.directors || '정보 없음'}</DetailItem>
-                  <DetailItem>배우: {movieInfo?.actors || '정보 없음'}</DetailItem>
+                  <DetailItem>감독: {
+                    Array.isArray(movieInfo?.directors) && movieInfo.directors.length > 0
+                      ? movieInfo.directors.join(', ')
+                      : typeof movieInfo?.directors === 'string'
+                        ? movieInfo.directors.split('|').map(d => d.trim()).join(', ')
+                        : '정보 없음'
+                  }</DetailItem>
+                  <DetailItem>배우: {
+                    Array.isArray(movieInfo?.actors) && movieInfo.actors.length > 0
+                      ? movieInfo.actors.join(', ')
+                      : typeof movieInfo?.actors === 'string'
+                        ? movieInfo.actors.split('|').map(a => a.trim()).join(', ')
+                        : '정보 없음'
+                  }</DetailItem>
                 </MovieDetails>
               </MovieInfo>
             </MovieInfoSidebar>
