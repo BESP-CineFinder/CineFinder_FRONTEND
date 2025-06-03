@@ -73,7 +73,8 @@ const MovieInfoSidebar = styled.div`
 `;
 
 const MoviePoster = styled.img`
-  width: 100%;
+  width: 75%;
+  align-self: center;
   height: auto;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -93,10 +94,10 @@ const MovieTitle = styled.h2`
 
 const MovieDescription = styled.div`
   color: #888;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.8rem;
+  line-height: 1.3;
   overflow-y: auto;
-  max-height: 80px;
+  max-height: 7rem;
   padding-right: 10px;
   
   &::-webkit-scrollbar {
