@@ -201,16 +201,16 @@ const MyPage = () => {
 
   const handleMovieClick = (movie) => {
     const movieData = {
-      ...movie.movieDetails,
+      ...movie.movieResponseDto,
       movieId: movie.movieId,
-      movieKey: movie.movieDetails.movieKey,
+      movieKey: movie.movieResponseDto.movieKey,
       movieNm: movie.title,
       title: movie.title,
-      posters: movie.movieDetails.posters ? movie.movieDetails.posters.split('|')[0] : movie.poster,
-      stlls: movie.movieDetails.stlls ? movie.movieDetails.stlls.split('|') : [],
-      directors: movie.movieDetails.directors ? movie.movieDetails.directors.split('|') : [],
-      actors: movie.movieDetails.actors ? movie.movieDetails.actors.split('|') : [],
-      vods: movie.movieDetails.vods ? movie.movieDetails.vods.split('|') : []
+      posters: movie.movieResponseDto.posters ? movie.movieResponseDto.posters.split('|')[0] : movie.poster,
+      stlls: movie.movieResponseDto.stlls ? movie.movieResponseDto.stlls.split('|') : [],
+      directors: movie.movieResponseDto.directors ? movie.movieResponseDto.directors.split('|') : [],
+      actors: movie.movieResponseDto.actors ? movie.movieResponseDto.actors.split('|') : [],
+      vods: movie.movieResponseDto.vods ? movie.movieResponseDto.vods.split('|') : []
     };
 
     navigate(`/movie/${movie.movieId}`, {
