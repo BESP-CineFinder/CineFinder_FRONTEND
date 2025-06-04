@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { logout, searchMovies } from '../../api/api';
 import { AuthContext } from '../../utils/auth/contexts/AuthProvider';
 import '../../utils/css/Header.css';
+import Button from '../Button/LogoutButton';
 
 const Header = () => {
     const { user, setUser } = useContext(AuthContext);
@@ -80,11 +81,31 @@ const Header = () => {
               </div>
             </Link>
             <div className="header-search-container">
-              <form onSubmit={handleSearch} className="header-search-form">
-                <div className="header-search-box">
+              <form onSubmit={handleSearch} className="header-search-form" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button 
+                  type="button"
+                  onClick={handleTheaterSearch} 
+                  className="theater-search-button"
+                  style={{
+                    background: '#4f46e5',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.5rem 1.1rem',
+                    fontWeight: 500,
+                    fontSize: '0.93rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    marginRight: '0.5rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  영화관 찾기
+                </button>
+                <div className="header-search-box" style={{ flex: 1 }}>
                   <input
                     type="text"
-                    placeholder="오늘 근처 영화관에서 볼 수 있는 영화를 찾아보세요"
+                    placeholder="감독·제목·배우 키워드로 근처 영화관 검색"
                     className="header-search-input"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -96,36 +117,12 @@ const Header = () => {
               </form>
             </div>
             <div className="auth-container">
-              <button 
-                onClick={handleTheaterSearch} 
-                className="theater-search-button"
-                style={{
-                  background: '#4f46e5',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '0.5rem 1.5rem',
-                  fontWeight: 500,
-                  fontSize: '0.95rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  marginRight: '1rem'
-                }}
-              >
-                영화관 찾기
-              </button>
               {user && user.isAuthenticated ? (
                 <>
                   <Link to="/mypage" className="mypage-link" aria-label="마이페이지로 이동">
                     <span>{user.payload.nickname} 님</span>
                   </Link>
-                  <button 
-                    className="logout-btn" 
-                    onClick={handleLogout}
-                    aria-label="로그아웃"
-                  >
-                    로그아웃
-                  </button>
+                  <Button onClick={handleLogout} />
                 </>
               ) : (
                 <button 

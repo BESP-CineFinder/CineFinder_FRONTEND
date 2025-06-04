@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
-import { StyledWrapper } from '../utils/stylejs/MainPage.styles';
+import React, { useState, useEffect, useContext } from 'react';
 import Footer from '../components/Footer/Footer';
 import '../utils/css/MainPage.css';
 import { useNavigate } from 'react-router-dom';
 import { getDailyBoxOffice, checkFavorite, getRecommendMovies } from '../api/api';
 import { AuthContext } from '../utils/auth/contexts/AuthProvider';
 import FavoriteButton from '../components/Button/FavoriteButton';
+import ArrowButton from '../components/Button/ArrowButton';
 
 const SEOUL_CITY_HALL = { lat: 37.566826, lng: 126.9786567 };
 
@@ -25,18 +25,22 @@ const getEmbeddableVodUrl = (vodUrl) => {
 const CARD_WIDTH = 190; // px
 const CARD_GAP = 19; // 1.2rem ≈ 19px
 
+// 추천영화 리스트에서 VOD가 있는 영화 찾기
+const getTopVodMovie = (movies) => {
+  if (!movies || movies.length === 0) return null;
+  for (const movie of movies) {
+    const vods = movie.movieResponseDto?.vods;
+    if (Array.isArray(vods) && vods.length > 0 && vods[0]) {
+      return movie;
+    }
+  }
+  return null;
+};
+
 const MainPage = () => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const boxOfficeSliderRef = useRef(null);
-  const recommendSliderRef = useRef(null);
-  const [isBoxOfficeDragging, setIsBoxOfficeDragging] = useState(false);
-  const [isRecommendDragging, setIsRecommendDragging] = useState(false);
-  const [boxOfficeStartX, setBoxOfficeStartX] = useState(0);
-  const [recommendStartX, setRecommendStartX] = useState(0);
-  const [boxOfficeScrollLeft, setBoxOfficeScrollLeft] = useState(0);
-  const [recommendScrollLeft, setRecommendScrollLeft] = useState(0);
   const navigate = useNavigate();
   const [boxOfficeMovies, setBoxOfficeMovies] = useState([]);
   const [favoriteStatus, setFavoriteStatus] = useState({});
@@ -61,8 +65,11 @@ const MainPage = () => {
   };
 
   // Hero 영상 제어 상태
-  const topRecommend = recommendMovies && recommendMovies.length > 0 ? recommendMovies[0] : null;
-  const topVod = topRecommend && topRecommend.movieResponseDto?.vods && topRecommend.movieResponseDto.vods[0];
+  const topVodMovie = getTopVodMovie(recommendMovies);
+  const topVod = Array.isArray(topVodMovie?.movieResponseDto?.vods)
+    ? topVodMovie.movieResponseDto.vods[0]
+    : undefined;
+  const topRecommend = topVodMovie;
 
   // floating 버튼 핸들러
   const handleScrollToTop = () => {
@@ -78,11 +85,9 @@ const MainPage = () => {
       try {
         setLoading(true);
         const response = await getDailyBoxOffice();
-        
         if (!response.payload || !Array.isArray(response.payload)) {
           throw new Error('박스오피스 데이터가 올바르지 않습니다.');
         }
-
         const movies = response.payload.map(movie => ({
           ...movie,
           movieResponseDto: {
@@ -95,7 +100,6 @@ const MainPage = () => {
             actors: movie.movieResponseDto?.actors ? movie.movieResponseDto.actors.split('|') : []
           }
         }));
-
         setBoxOfficeMovies(movies);
       } catch (err) {
         setError('영화 정보를 불러오는데 실패했습니다.');
@@ -104,9 +108,8 @@ const MainPage = () => {
         setLoading(false);
       }
     };
-
     fetchBoxOfficeMovies();
-  }, []); // 페이지 진입 시마다 박스오피스 정보 가져오기
+  }, []);
 
   // 추천 영화 목록 가져오기
   useEffect(() => {
@@ -114,11 +117,9 @@ const MainPage = () => {
       try {
         setRecommendLoading(true);
         const response = await getRecommendMovies();
-        
         if (!response.payload || !Array.isArray(response.payload)) {
           throw new Error('추천 영화 데이터가 올바르지 않습니다.');
         }
-
         const movies = response.payload.map(movie => ({
           ...movie,
           movieResponseDto: {
@@ -131,7 +132,6 @@ const MainPage = () => {
             actors: movie.movieResponseDto?.actors ? movie.movieResponseDto.actors.split('|') : []
           }
         }));
-
         setRecommendMovies(movies);
       } catch (err) {
         setRecommendError('추천 영화 정보를 불러오는데 실패했습니다.');
@@ -140,7 +140,6 @@ const MainPage = () => {
         setRecommendLoading(false);
       }
     };
-
     fetchRecommendMovies();
   }, []);
 
@@ -148,7 +147,6 @@ const MainPage = () => {
   useEffect(() => {
     const fetchFavoriteStatus = async () => {
       if (!user || (!boxOfficeMovies.length && !recommendMovies.length)) return;
-      
       try {
         const movieIds = [
           ...boxOfficeMovies.map(movie => movie.movieId),
@@ -166,118 +164,9 @@ const MainPage = () => {
         console.error('즐겨찾기 상태 확인 실패:', error);
       }
     };
-
     setFavoriteStatus({});
     fetchFavoriteStatus();
   }, [user, boxOfficeMovies, recommendMovies]);
-
-  const handleBoxOfficeMouseDown = (e) => {
-    setIsBoxOfficeDragging(true);
-    setBoxOfficeStartX(e.pageX - boxOfficeSliderRef.current.offsetLeft);
-    setBoxOfficeScrollLeft(boxOfficeSliderRef.current.scrollLeft);
-    boxOfficeSliderRef.current.style.cursor = 'grabbing';
-    boxOfficeSliderRef.current.classList.add('dragging');
-  };
-
-  const handleRecommendMouseDown = (e) => {
-    setIsRecommendDragging(true);
-    setRecommendStartX(e.pageX - recommendSliderRef.current.offsetLeft);
-    setRecommendScrollLeft(recommendSliderRef.current.scrollLeft);
-    recommendSliderRef.current.style.cursor = 'grabbing';
-    recommendSliderRef.current.classList.add('dragging');
-  };
-
-  const handleBoxOfficeMouseUp = () => {
-    setIsBoxOfficeDragging(false);
-    if (boxOfficeSliderRef.current) {
-      boxOfficeSliderRef.current.style.cursor = 'grab';
-      boxOfficeSliderRef.current.classList.remove('dragging');
-    }
-  };
-
-  const handleRecommendMouseUp = () => {
-    setIsRecommendDragging(false);
-    if (recommendSliderRef.current) {
-      recommendSliderRef.current.style.cursor = 'grab';
-      recommendSliderRef.current.classList.remove('dragging');
-    }
-  };
-
-  const handleBoxOfficeMouseLeave = () => {
-    setIsBoxOfficeDragging(false);
-    if (boxOfficeSliderRef.current) {
-      boxOfficeSliderRef.current.style.cursor = 'grab';
-      boxOfficeSliderRef.current.classList.remove('dragging');
-    }
-  };
-
-  const handleRecommendMouseLeave = () => {
-    setIsRecommendDragging(false);
-    if (recommendSliderRef.current) {
-      recommendSliderRef.current.style.cursor = 'grab';
-      recommendSliderRef.current.classList.remove('dragging');
-    }
-  };
-
-  const handleBoxOfficeMouseMove = (e) => {
-    if (!isBoxOfficeDragging) return;
-    e.preventDefault();
-    const x = e.pageX - boxOfficeSliderRef.current.offsetLeft;
-    const walk = (x - boxOfficeStartX) * 2;
-    boxOfficeSliderRef.current.scrollLeft = boxOfficeScrollLeft - walk;
-  };
-
-  const handleRecommendMouseMove = (e) => {
-    if (!isRecommendDragging) return;
-    e.preventDefault();
-    const x = e.pageX - recommendSliderRef.current.offsetLeft;
-    const walk = (x - recommendStartX) * 2;
-    recommendSliderRef.current.scrollLeft = recommendScrollLeft - walk;
-  };
-
-  const handleBoxOfficePrevClick = () => {
-    if (boxOfficeSliderRef.current) {
-      const scrollAmount = (CARD_WIDTH + CARD_GAP) * 5;
-      boxOfficeSliderRef.current.scrollBy({
-        left: -scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  const handleBoxOfficeNextClick = () => {
-    if (boxOfficeSliderRef.current) {
-      const scrollAmount = (CARD_WIDTH + CARD_GAP) * 5;
-      boxOfficeSliderRef.current.scrollBy({
-        left: scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  const handleRecommendPrevClick = () => {
-    if (recommendSliderRef.current) {
-      const scrollAmount = (CARD_WIDTH + CARD_GAP) * 5;
-      recommendSliderRef.current.scrollBy({
-        left: -scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  const handleRecommendNextClick = () => {
-    if (recommendSliderRef.current) {
-      const scrollAmount = (CARD_WIDTH + CARD_GAP) * 5;
-      recommendSliderRef.current.scrollBy({
-        left: scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  const handleTheaterSearch = () => {
-    navigate('/theater-search');
-  };
 
   const handleDetailClick = (movie) => {
     navigate(`/movie/${movie.movieKey}`, { 
@@ -296,7 +185,6 @@ const MainPage = () => {
 
   const handleFavoriteToggle = async (movieId, newStatus) => {
     if (!user) return;
-    // FavoriteButton에서 이미 API를 호출하므로 여기서는 상태만 업데이트
     setFavoriteStatus(prev => ({
       ...prev,
       [movieId]: newStatus
@@ -316,7 +204,6 @@ const MainPage = () => {
       maxTime: endTime,
       distance: 3,
       movieIds: [movieId]
-      // lat, lng 없음
     };
     navigate('/theater-search-result', { state: searchParams });
   };
@@ -326,7 +213,6 @@ const MainPage = () => {
     const handleBeforeUnload = () => {
       setIsInitialLoad(true);
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -341,47 +227,38 @@ const MainPage = () => {
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: '900px',
-          margin: '0 auto',
-          background: '#000',
+          height: '420px',
           overflow: 'hidden',
-          height: 'auto',
-          aspectRatio: '16/9',
+          background: '#000',
         }}
       >
-        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
-          {topVod && (
-            <iframe
-              src={getEmbeddableVodUrl(topVod)}
-              title="추천 영화 예고편"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                background: '#000',
-                border: 'none',
-              }}
-            />
-          )}
-          {/* 오버레이: 왼쪽 중앙 */}
-          {topRecommend && (
-            <div className="main-hero-overlay" style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1.2rem', background: 'rgba(0,0,0,0.08)', padding: '2.2rem 2.5rem', borderRadius: '1.2rem' }}>
-              <div className="main-hero-badge">CineFinder 1위 추천 영화</div>
-              <div className="main-hero-title">{topRecommend.movieResponseDto.movieNm}</div>
-              <button className="main-hero-btn" style={{ pointerEvents: 'auto' }} onClick={() => handleDetailClick({
-                movieId: topRecommend.movieId,
-                movieKey: topRecommend.movieId,
-                movieNm: topRecommend.movieResponseDto.movieNm,
-                movieResponseDto: topRecommend.movieResponseDto
-              })}>상세보기</button>
-            </div>
-          )}
-        </div>
+        {topVod && (
+          <iframe
+            src={getEmbeddableVodUrl(topVod)}
+            title="추천 영화 예고편"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={
+              topVod.includes('tv.kakao.com')
+                ? { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: '#000', border: 'none', display: 'block', overflow: 'hidden' }
+                : { position: 'absolute', left: '20rem', width: '100%', height: '800px', background: '#000', border: 'none', display: 'block', top: '-4.3rem', overflow: 'hidden' }
+            }
+          />
+        )}
+        {/* 오버레이: 왼쪽 중앙 */}
+        {topRecommend && (
+          <div className="main-hero-overlay" style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1.2rem', background: 'rgba(0,0,0,0.08)', padding: '2.2rem 2.5rem', borderRadius: '1.2rem' }}>
+            <div className="main-hero-badge">CineFinder 추천 영화</div>
+            <div className="main-hero-title">{topRecommend.movieResponseDto.movieNm}</div>
+            <button className="main-hero-btn" style={{ pointerEvents: 'auto' }} onClick={() => handleDetailClick({
+              movieId: topRecommend.movieId,
+              movieKey: topRecommend.movieId,
+              movieNm: topRecommend.movieResponseDto.movieNm,
+              movieResponseDto: topRecommend.movieResponseDto
+            })}>상세보기</button>
+          </div>
+        )}
       </section>
 
       {/* 탭 헤더 */}
@@ -392,10 +269,10 @@ const MainPage = () => {
 
       {/* 무비차트 슬라이더 */}
       {activeTab === 'boxoffice' && (
-        <div className="movie-slider-container">
-          <button className="movie-slider-arrow prev" onClick={handlePrev} disabled={sliderIdx === 0}>&lt;</button>
+        <div className="movie-slider-container relative w-full flex items-center">
+          <ArrowButton direction="left" onClick={handlePrev} disabled={sliderIdx === 0} />
           <div
-            className="movie-slider-grid"
+            className="movie-slider-grid flex-1 overflow-hidden"
             style={{ cursor: 'grab', width: '100%', justifyContent: 'center' }}
           >
             {boxOfficeMovies.slice(sliderIdx, sliderIdx + VISIBLE_COUNT).map((movie, idx) => (
@@ -423,16 +300,16 @@ const MainPage = () => {
               </div>
             ))}
           </div>
-          <button className="movie-slider-arrow next" onClick={handleNext} disabled={sliderIdx >= maxIdx}>&gt;</button>
+          <ArrowButton direction="right" onClick={handleNext} disabled={sliderIdx >= maxIdx} />
         </div>
       )}
 
       {/* 추천영화 슬라이더 */}
       {activeTab === 'recommend' && (
-        <div className="movie-slider-container">
-          <button className="movie-slider-arrow prev" onClick={handlePrev} disabled={sliderIdx === 0}>&lt;</button>
+        <div className="movie-slider-container relative w-full flex items-center">
+          <ArrowButton direction="left" onClick={handlePrev} disabled={sliderIdx === 0} />
           <div
-            className="movie-slider-grid"
+            className="movie-slider-grid flex-1 overflow-hidden"
             style={{ cursor: 'grab', width: '100%', justifyContent: 'center' }}
           >
             {recommendMovies.slice(sliderIdx, sliderIdx + VISIBLE_COUNT).map((movie, idx) => (
@@ -460,7 +337,7 @@ const MainPage = () => {
               </div>
             ))}
           </div>
-          <button className="movie-slider-arrow next" onClick={handleNext} disabled={sliderIdx >= maxIdx}>&gt;</button>
+          <ArrowButton direction="right" onClick={handleNext} disabled={sliderIdx >= maxIdx} />
         </div>
       )}
 
