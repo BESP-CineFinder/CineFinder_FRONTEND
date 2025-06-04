@@ -336,7 +336,19 @@ const MainPage = () => {
   return (
     <div className="main-container">
       {/* 메인 히어로 영역 */}
-      <section className="main-hero">
+      <section
+        className="main-hero"
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '420px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          background: '#000',
+        }}
+      >
         {topVod && (
           <iframe
             src={getEmbeddableVodUrl(topVod)}
@@ -344,7 +356,16 @@ const MainPage = () => {
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-            style={{ width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }}
+            style={{
+              display: 'block',
+              margin: '0 auto',
+              width: '100%',
+              height: '100%',
+              maxWidth: '900px',
+              maxHeight: '100%',
+              background: '#000',
+              border: 'none',
+            }}
           />
         )}
         {/* 오버레이: 왼쪽 중앙 */}
