@@ -360,6 +360,21 @@ const ChatRoom = () => {
   const { user, isLoading: isUserLoading } = useContext(AuthContext);
   const [cursorCreatedAt, setCursorCreatedAt] = useState(null);
 
+  // 로그인 페이지 URL 설정
+  const LOGIN_PAGE_URL = process.env.REACT_APP_LOGIN_PAGE_URL || 'https://localhost/api/login/';
+
+  // 사용자 정보 체크 및 리다이렉트
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      if (window.confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?')) {
+        window.location.href = LOGIN_PAGE_URL;
+      } else {
+        // 사용자가 취소한 경우 이전 페이지로 이동
+        navigate(-1);
+      }
+    }
+  }, [user, isUserLoading, navigate]);
+
   // 중복 요청 방지용 debounce
   let lastHistoryRequest = 0;
   const DEBOUNCE_MS = 700;
