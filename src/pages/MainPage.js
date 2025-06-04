@@ -341,46 +341,47 @@ const MainPage = () => {
         style={{
           position: 'relative',
           width: '100%',
-          height: '420px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
+          maxWidth: '900px',
+          margin: '0 auto',
           background: '#000',
+          overflow: 'hidden',
+          height: 'auto',
+          aspectRatio: '16/9',
         }}
       >
-        {topVod && (
-          <iframe
-            src={getEmbeddableVodUrl(topVod)}
-            title="추천 영화 예고편"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            style={{
-              display: 'block',
-              margin: '0 auto',
-              width: '100%',
-              height: '100%',
-              maxWidth: '900px',
-              maxHeight: '100%',
-              background: '#000',
-              border: 'none',
-            }}
-          />
-        )}
-        {/* 오버레이: 왼쪽 중앙 */}
-        {topRecommend && (
-          <div className="main-hero-overlay" style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1.2rem', background: 'rgba(0,0,0,0.08)', padding: '2.2rem 2.5rem', borderRadius: '1.2rem' }}>
-            <div className="main-hero-badge">CineFinder 1위 추천 영화</div>
-            <div className="main-hero-title">{topRecommend.movieResponseDto.movieNm}</div>
-            <button className="main-hero-btn" style={{ pointerEvents: 'auto' }} onClick={() => handleDetailClick({
-              movieId: topRecommend.movieId,
-              movieKey: topRecommend.movieId,
-              movieNm: topRecommend.movieResponseDto.movieNm,
-              movieResponseDto: topRecommend.movieResponseDto
-            })}>상세보기</button>
-          </div>
-        )}
+        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
+          {topVod && (
+            <iframe
+              src={getEmbeddableVodUrl(topVod)}
+              title="추천 영화 예고편"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: '#000',
+                border: 'none',
+              }}
+            />
+          )}
+          {/* 오버레이: 왼쪽 중앙 */}
+          {topRecommend && (
+            <div className="main-hero-overlay" style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1.2rem', background: 'rgba(0,0,0,0.08)', padding: '2.2rem 2.5rem', borderRadius: '1.2rem' }}>
+              <div className="main-hero-badge">CineFinder 1위 추천 영화</div>
+              <div className="main-hero-title">{topRecommend.movieResponseDto.movieNm}</div>
+              <button className="main-hero-btn" style={{ pointerEvents: 'auto' }} onClick={() => handleDetailClick({
+                movieId: topRecommend.movieId,
+                movieKey: topRecommend.movieId,
+                movieNm: topRecommend.movieResponseDto.movieNm,
+                movieResponseDto: topRecommend.movieResponseDto
+              })}>상세보기</button>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* 탭 헤더 */}
