@@ -42,13 +42,13 @@ const MainPage = () => {
 
         const movies = response.payload.map(movie => ({
           ...movie,
-          movieDetails: {
-            ...movie.movieDetails,
-            posters: movie.movieDetails?.posters ? movie.movieDetails.posters.split('|')[0] : '',
-            stlls: movie.movieDetails?.stlls ? movie.movieDetails.stlls.split('|') : [],
-            vods: movie.movieDetails?.vods ? movie.movieDetails.vods.split('|') : [],
-            directors: movie.movieDetails?.directors ? movie.movieDetails.directors.split('|') : [],
-            actors: movie.movieDetails?.actors ? movie.movieDetails.actors.split('|') : []
+          movieResponseDto: {
+            ...movie.movieResponseDto,
+            posters: movie.movieResponseDto?.posters ? movie.movieResponseDto.posters.split('|')[0] : '',
+            stlls: movie.movieResponseDto?.stlls ? movie.movieResponseDto.stlls.split('|') : [],
+            vods: movie.movieResponseDto?.vods ? movie.movieResponseDto.vods.split('|') : [],
+            directors: movie.movieResponseDto?.directors ? movie.movieResponseDto.directors.split('|') : [],
+            actors: movie.movieResponseDto?.actors ? movie.movieResponseDto.actors.split('|') : []
           }
         }));
 
@@ -77,13 +77,13 @@ const MainPage = () => {
 
         const movies = response.payload.map(movie => ({
           ...movie,
-          movieDetails: {
-            ...movie.movieDetails,
-            posters: movie.movieDetails?.posters ? movie.movieDetails.posters.split('|')[0] : '',
-            stlls: movie.movieDetails?.stlls ? movie.movieDetails.stlls.split('|') : [],
-            vods: movie.movieDetails?.vods ? movie.movieDetails.vods.split('|') : [],
-            directors: movie.movieDetails?.directors ? movie.movieDetails.directors.split('|') : [],
-            actors: movie.movieDetails?.actors ? movie.movieDetails.actors.split('|') : []
+          movieResponseDto: {
+            ...movie.movieResponseDto,
+            posters: movie.movieResponseDto?.posters ? movie.movieResponseDto.posters.split('|')[0] : '',
+            stlls: movie.movieResponseDto?.stlls ? movie.movieResponseDto.stlls.split('|') : [],
+            vods: movie.movieResponseDto?.vods ? movie.movieResponseDto.vods.split('|') : [],
+            directors: movie.movieResponseDto?.directors ? movie.movieResponseDto.directors.split('|') : [],
+            actors: movie.movieResponseDto?.actors ? movie.movieResponseDto.actors.split('|') : []
           }
         }));
 
@@ -238,7 +238,7 @@ const MainPage = () => {
     navigate(`/movie/${movie.movieKey}`, { 
       state: { 
         movieData: {
-          ...movie.movieDetails,
+          ...movie.movieResponseDto,
           movieId: movie.movieId,
           movieKey: movie.movieKey,
           movieNm: movie.movieNm,
@@ -308,7 +308,7 @@ const MainPage = () => {
                 <div key={movie.movieKey} className="movie-card">
                   <div className="main-movie-poster">
                     <img
-                      src={movie.movieDetails?.posters || 'https://via.placeholder.com/300x450'}
+                      src={movie.movieResponseDto?.posters || 'https://via.placeholder.com/300x450'}
                       alt={movie.movieNm}
                     />
                     <div className="movie-overlay">
@@ -372,8 +372,8 @@ const MainPage = () => {
                 <div key={movie.movieId} className="movie-card">
                   <div className="main-movie-poster">
                     <img
-                      src={movie.movieDetails?.posters || 'https://via.placeholder.com/300x450'}
-                      alt={movie.movieDetails.movieNm}
+                      src={movie.movieResponseDto?.posters || 'https://via.placeholder.com/300x450'}
+                      alt={movie.movieResponseDto.movieNm}
                     />
                     <div className="movie-overlay">
                       <button 
@@ -381,8 +381,8 @@ const MainPage = () => {
                         onClick={() => handleDetailClick({
                           movieId: movie.movieId,
                           movieKey: movie.movieId,
-                          movieNm: movie.movieDetails.movieNm,
-                          movieDetails: movie.movieDetails
+                          movieNm: movie.movieResponseDto.movieNm,
+                          movieResponseDto: movie.movieResponseDto
                         })}
                       >
                         상세정보
@@ -403,7 +403,7 @@ const MainPage = () => {
                       />
                     )}
                   </div>
-                  <h3 className="movie-title">{movie.movieDetails.movieNm}</h3>
+                  <h3 className="movie-title">{movie.movieResponseDto.movieNm}</h3>
                 </div>
               ))}
             </div>
