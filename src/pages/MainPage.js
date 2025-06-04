@@ -292,164 +292,129 @@ const MainPage = () => {
     <div className="main-container">
 
       {/* 메인 인트로 영역 */}
-      <section className="welcome-section earth-style">
+      <section className="welcome-section">
         <div className="welcome-inner">
-          <h2 className="welcome-title earth-title">
-            영화를 쉽고 빠르게,
-          </h2>
-          <h2 className="welcome-title-bottom">한눈에!</h2>
-          <p className="welcome-desc">
-            팝콘과 함께하는 영화 탐험!<br />
-            오늘 근처 영화관에서 볼 수 있는 영화를 찾아보세요.
-          </p>
-          <StyledWrapper>
-            <button onClick={handleTheaterSearch}>영화관 찾기</button>
-          </StyledWrapper>
         </div>
-      </section>
 
-      {/* 현재 상영중인 영화 섹션 */}
-      <main className="main-content">
-        <section className="section">
-          <h2 className="section-title">
-            <span className="section-title-emoji">🎬</span>
-            DailyBoxOffice
-          </h2>
+        {/* 박스오피스 영화 섹션 */}
+        <section className="boxoffice-section">
           {loading ? (
             <div className="loading">로딩중...</div>
           ) : error ? (
             <div className="error">{error}</div>
           ) : (
-            <div className="movie-slider-container">
-              <button className="slider-button prev" onClick={handleBoxOfficePrevClick}>
-                <svg viewBox="0 0 24 24">
-                  <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-                </svg>
-              </button>
-              <div 
-                className="movie-slider" 
-                ref={boxOfficeSliderRef}
-                onMouseDown={handleBoxOfficeMouseDown}
-                onMouseUp={handleBoxOfficeMouseUp}
-                onMouseLeave={handleBoxOfficeMouseLeave}
-                onMouseMove={handleBoxOfficeMouseMove}
-                style={{ cursor: 'grab' }}
-              >
-                {boxOfficeMovies.map((movie) => (
-                  <div key={movie.movieKey} className="movie-card">
-                    <div className="main-movie-poster">
-                      <img
-                        src={movie.movieDetails?.posters || 'https://via.placeholder.com/300x450'}
-                        alt={movie.movieNm}
-                      />
-                      <div className="movie-overlay">
-                        <button 
-                          className="movie-button detail-button"
-                          onClick={() => handleDetailClick(movie)}
-                        >
-                          상세정보
-                        </button>
-                        <button 
-                          className="movie-button theater-button"
-                          onClick={() => handleBoxOfficeReserve(movie.movieId)}
-                        >
-                          예매하기
-                        </button>
-                      </div>
-                      {user && (
-                        <FavoriteButton 
-                          userId={user.payload.userId}
-                          movieId={movie.movieId}
-                          isFavorite={favoriteStatus[movie.movieId] || false}
-                          onToggle={(newStatus) => handleFavoriteToggle(movie.movieId, newStatus)}
-                        />
-                      )}
+            <div className="boxoffice-grid">
+              {boxOfficeMovies.map((movie) => (
+                <div key={movie.movieKey} className="movie-card">
+                  <div className="main-movie-poster">
+                    <img
+                      src={movie.movieDetails?.posters || 'https://via.placeholder.com/300x450'}
+                      alt={movie.movieNm}
+                    />
+                    <div className="movie-overlay">
+                      <button 
+                        className="movie-button detail-button"
+                        onClick={() => handleDetailClick(movie)}
+                      >
+                        상세정보
+                      </button>
+                      <button 
+                        className="movie-button theater-button"
+                        onClick={() => handleBoxOfficeReserve(movie.movieId)}
+                      >
+                        예매하기
+                      </button>
                     </div>
+                    {user && (
+                      <FavoriteButton 
+                        userId={user.payload.userId}
+                        movieId={movie.movieId}
+                        isFavorite={favoriteStatus[movie.movieId] || false}
+                        onToggle={(newStatus) => handleFavoriteToggle(movie.movieId, newStatus)}
+                      />
+                    )}
                   </div>
-                ))}
-              </div>
-              <button className="slider-button next" onClick={handleBoxOfficeNextClick}>
-                <svg viewBox="0 0 24 24">
-                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                </svg>
-              </button>
+                  <h3 className="movie-title">{movie.movieNm}</h3>
+                </div>
+              ))}
             </div>
           )}
         </section>
+      </section>
 
-        {/* 추천 영화 섹션 */}
-        <section className="section">
-          <h2 className="section-title">
-            <span className="section-title-emoji">🎯</span>
-            CineFinder 추천 영화
-          </h2>
-          {recommendLoading ? (
-            <div className="loading">로딩중...</div>
-          ) : recommendError ? (
-            <div className="error">{recommendError}</div>
-          ) : (
-            <div className="movie-slider-container">
-              <button className="slider-button prev" onClick={handleRecommendPrevClick}>
-                <svg viewBox="0 0 24 24">
-                  <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-                </svg>
-              </button>
-              <div 
-                className="movie-slider" 
-                ref={recommendSliderRef}
-                onMouseDown={handleRecommendMouseDown}
-                onMouseUp={handleRecommendMouseUp}
-                onMouseLeave={handleRecommendMouseLeave}
-                onMouseMove={handleRecommendMouseMove}
-                style={{ cursor: 'grab' }}
-              >
-                {recommendMovies.map((movie) => (
-                  <div key={movie.movieId} className="movie-card">
-                    <div className="main-movie-poster">
-                      <img
-                        src={movie.movieDetails?.posters || 'https://via.placeholder.com/300x450'}
-                        alt={movie.movieDetails.movieNm}
-                      />
-                      <div className="movie-overlay">
-                        <button 
-                          className="movie-button detail-button"
-                          onClick={() => handleDetailClick({
-                            movieId: movie.movieId,
-                            movieKey: movie.movieId,
-                            movieNm: movie.movieDetails.movieNm,
-                            movieDetails: movie.movieDetails
-                          })}
-                        >
-                          상세정보
-                        </button>
-                        <button 
-                          className="movie-button theater-button"
-                          onClick={() => handleBoxOfficeReserve(movie.movieId)}
-                        >
-                          예매하기
-                        </button>
-                      </div>
-                      {user && (
-                        <FavoriteButton 
-                          userId={user.payload.userId}
-                          movieId={movie.movieId}
-                          isFavorite={favoriteStatus[movie.movieId] || false}
-                          onToggle={(newStatus) => handleFavoriteToggle(movie.movieId, newStatus)}
-                        />
-                      )}
+      {/* 추천 영화 섹션 */}
+      <section className="section">
+        <h2 className="section-title">
+          <span className="section-title-emoji">🎯</span>
+          CineFinder 추천 영화
+        </h2>
+        {recommendLoading ? (
+          <div className="loading">로딩중...</div>
+        ) : recommendError ? (
+          <div className="error">{recommendError}</div>
+        ) : (
+          <div className="movie-slider-container">
+            <button className="slider-button prev" onClick={handleRecommendPrevClick}>
+              <svg viewBox="0 0 24 24">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+              </svg>
+            </button>
+            <div 
+              className="movie-slider" 
+              ref={recommendSliderRef}
+              onMouseDown={handleRecommendMouseDown}
+              onMouseUp={handleRecommendMouseUp}
+              onMouseLeave={handleRecommendMouseLeave}
+              onMouseMove={handleRecommendMouseMove}
+              style={{ cursor: 'grab' }}
+            >
+              {recommendMovies.map((movie) => (
+                <div key={movie.movieId} className="movie-card">
+                  <div className="main-movie-poster">
+                    <img
+                      src={movie.movieDetails?.posters || 'https://via.placeholder.com/300x450'}
+                      alt={movie.movieDetails.movieNm}
+                    />
+                    <div className="movie-overlay">
+                      <button 
+                        className="movie-button detail-button"
+                        onClick={() => handleDetailClick({
+                          movieId: movie.movieId,
+                          movieKey: movie.movieId,
+                          movieNm: movie.movieDetails.movieNm,
+                          movieDetails: movie.movieDetails
+                        })}
+                      >
+                        상세정보
+                      </button>
+                      <button 
+                        className="movie-button theater-button"
+                        onClick={() => handleBoxOfficeReserve(movie.movieId)}
+                      >
+                        예매하기
+                      </button>
                     </div>
+                    {user && (
+                      <FavoriteButton 
+                        userId={user.payload.userId}
+                        movieId={movie.movieId}
+                        isFavorite={favoriteStatus[movie.movieId] || false}
+                        onToggle={(newStatus) => handleFavoriteToggle(movie.movieId, newStatus)}
+                      />
+                    )}
                   </div>
-                ))}
-              </div>
-              <button className="slider-button next" onClick={handleRecommendNextClick}>
-                <svg viewBox="0 0 24 24">
-                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                </svg>
-              </button>
+                  <h3 className="movie-title">{movie.movieDetails.movieNm}</h3>
+                </div>
+              ))}
             </div>
-          )}
-        </section>
-      </main>
+            <button className="slider-button next" onClick={handleRecommendNextClick}>
+              <svg viewBox="0 0 24 24">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+              </svg>
+            </button>
+          </div>
+        )}
+      </section>
 
       <Footer />
     </div>

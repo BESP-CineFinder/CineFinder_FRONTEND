@@ -58,6 +58,10 @@ const Header = () => {
         navigate('/theater-search-result', { state: searchParams });
     };
 
+    const handleTheaterSearch = () => {
+        navigate('/theater-search');
+    };
+
     useEffect(() => {
         setLoading(false);
     }, []);
@@ -80,7 +84,7 @@ const Header = () => {
                 <div className="header-search-box">
                   <input
                     type="text"
-                    placeholder="영화와 관련된 키워드를 입력하세요(배우, 감독, 영화 제목 등)"
+                    placeholder="오늘 근처 영화관에서 볼 수 있는 영화를 찾아보세요"
                     className="header-search-input"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -92,6 +96,24 @@ const Header = () => {
               </form>
             </div>
             <div className="auth-container">
+              <button 
+                onClick={handleTheaterSearch} 
+                className="theater-search-button"
+                style={{
+                  background: '#4f46e5',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0.5rem 1.5rem',
+                  fontWeight: 500,
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  marginRight: '1rem'
+                }}
+              >
+                영화관 찾기
+              </button>
               {user && user.isAuthenticated ? (
                 <>
                   <Link to="/mypage" className="mypage-link" aria-label="마이페이지로 이동">
