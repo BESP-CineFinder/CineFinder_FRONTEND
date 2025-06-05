@@ -133,11 +133,11 @@ const SliderButton = styled.button`
   }
 
   &.prev {
-    left: 0;
+    left: -1.5rem;
   }
 
   &.next {
-    right: 0;
+    right: 2rem;
   }
 
   svg {
